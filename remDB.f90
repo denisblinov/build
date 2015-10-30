@@ -16,6 +16,8 @@
 ! - system printing and OUT message 
 ! - optimize section OUTPUT
 ! - describe DefGrid
+! - add print legend of variables for maket and csv: long name and unit
+! - delete SYNOPDOP from input - only for internal calling
 
 PROGRAM ReadBASE     
   USE  RemDB
@@ -24,8 +26,8 @@ PROGRAM ReadBASE
   IMPLICIT NONE
 
 !--------------  Переменные для базы данных -----------------------------
-  CHARACTER*15 HOST/'192.168.97.72'/        ! ip adress base or name Host 
-  CHARACTER*4  nameBASE           ! name base 
+  CHARACTER*15 HOST/'192.168.97.72'/        ! ip-adress or name host with base
+  CHARACTER*4  nameBASE           ! name base
   INTEGER*4    codeOPEN/560701/, &    ! code access for OPEN base(one for one user/host)   
                codeBASE               ! code(number) base /420511/
   LOGICAL   :: statBASE=.false. , cycleBASE=.true.
@@ -356,12 +358,13 @@ PROGRAM ReadBASE
       !WRITE(FileName,'(i8,i2.2,a4)') Date, hour,RECNAME;     WRITE(*,*) 'numberElements = ',NEL
       IF (LP >9 )  WRITE(*,*) RECNAME(el),Date(t),hour(t),'MINvalue1,2= ',minval(value_field(:,:,t)),minval(value_field(:,:,t), MASK=value_field(:,:,t)>iundef),'MAXvalue= ',maxval(value_field(:,:,t))
 
-      value_field2=value_field
+      value_field2 = value_field
 
+      IF (LP > 3 )  WRITE (*,*) '  before handle  value_field ', t, df(el,t)%NY
 ! handle reading array from base
       CALL HANDLE()
 
-      IF (LP > 3 )  WRITE (*,*) '  after handle  value_field ', t
+      IF (LP > 3 )  WRITE (*,*) '  after handle  value_field ', t, df(el,t)%NY
       !var(el,t)=outfield(value_field2(1:NX,1:NY,t))
       var(el,t)=outfield(value_field3(1:NX,1:NY,t))
 
@@ -436,20 +439,22 @@ PROGRAM ReadBASE
       IF (RECNAME(el)=='SYNOPDOP' .or. RECNAME(el)=='SYNOPMAK') THEN
        !WRITE(ounit,'(45(a,"    "))') (trim(df(el,t)%header(i)),i=2,45)
         WRITE(ounit,'(a5,a8,a9,a7,a4,40(x,a7))') (trim(df(el,t)%header(i)),i=2,46)
-       !WRITE(ounit,'(i2,i3.3, 2f9.3, f7.1,i4,f8.1,2i8,37f8.1)')                 &
-       !WRITE(ounit,'(i2,i3.3, 2f9.3, f7.1,i4,f8.1,2i8,37f8.1)')                 &
-       !WRITE(ounit,'(i2,i3.3, 2(x,f8.3), x,f6.0, x,i3, x,f7.1, 2(x,i7):, 37(x,f7.1))')    &
         WRITE(ounit,2002)               ( &
-        ( INT(var(el,t)%p2(1,j)), INT(var(el,t)%p2(2,j)),  &
-          (var(el,t)%p2(3:4,j)), INT(var(el,t)%p2(5,j)) &
-          INT(var(el,t)%p2(6:9,j)),                             &
-          var(el,t)%p2(10:11,j), INT(var(el,t)%p2(12,j)), var(el,t)%p2(13,j),       &
-         (var(el,t)%p2(14:46,j)) ), j=1,NY )
+         ( INT(var(el,t)%p2(1,j)), INT(var(el,t)%p2(2,j)),      &
+           (var(el,t)%p2(3:4,j)), INT(var(el,t)%p2(5,j)),       &
+           INT(var(el,t)%p2(6:9,j)),                            &
+           var(el,t)%p2(10:11,j),                               &
+           INT(var(el,t)%p2(12,j)), INT(var(el,t)%p2(13,j)),    &
+           INT(var(el,t)%p2(14,j)),  var(el,t)%p2(15,j),        &
+           (var(el,t)%p2(16:17,j)),      &
+           INT(var(el,t)%p2(18:25,j)),  &
+           (var(el,t)%p2(26:32,j)),     &
+           INT(var(el,t)%p2(33:40,j)),  &
+           (var(el,t)%p2(41:46,j)) ), j=1,NY )
         !WRITE(ounit,'(i2)') ( (int(var(el,t)%p2(1,j))),j=1,NY)
 
-      !2002 FORMAT(i2,i3.3, 2(f8.3), f7.1,i4,f8.1,2i8,37f8.1)
-      2002 FORMAT( (i2,i3.3, xf7.3,xf8.3, xi6, xi3, xi7, xi7,xi7, xf7.1,xf7.1, xi7, 34(xf7.1)) )
-      !2002 FORMAT(i2,i3.3, 2(f9.3,1x), x,f6.0, x,i3, x,f7.1, 2i8,37f8.1)
+      2002 FORMAT( (i2,i3.3, xf7.3,xf8.3, xi6, xi3, xi7, xi7,xi7, xf7.1,xf7.1, &
+                    3(xi7), 3(xf7.1), 8(xi7), 7(xf7.1), 8(xi7), 6(xf7.1) ) )
 
       ELSEIF( RECNAME(el)=='TEMPMAKT' ) THEN
         WRITE(ounit,'(100(a,"    "))') df(el,t)%header(2:96)

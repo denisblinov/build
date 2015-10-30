@@ -88,12 +88,12 @@ SUBROUTINE handle()
       df(el,:)%header(7)='gps'
       df(el,:)%header(8)='ps'
       df(el,:)%header(9)='pmsl'
-      df(el,:)%header(10)='t2m'
-      df(el,:)%header(11)='td2m'
-      df(el,:)%header(12)='dd10m'
+      df(el,:)%header(10)='t_2m'
+      df(el,:)%header(11)='td_2m'
+      df(el,:)%header(12)='dd_10m'
       df(el,:)%header(13)='ff_10m'
-      df(el,:)%header(14)='typ_dpst'
-      df(el,:)%header(15)='dpst'
+      df(el,:)%header(14)='typTPS'
+      df(el,:)%header(15)='tps'
       df(el,:)%header(16)='hVV'
       df(el,:)%header(17)='tSunl'
       df(el,:)%header(18)='clct'
@@ -112,18 +112,18 @@ SUBROUTINE handle()
       df(el,:)%header(31)='R24'
       df(el,:)%header(32)='t_g'
       df(el,:)%header(33)='hSnow'
-      df(el,:)%header(34)='signR'
+      df(el,:)%header(34)='shiftR'
       df(el,:)%header(35)='E4'
       df(el,:)%header(36)='E1'
       df(el,:)%header(37)='E3'
       df(el,:)%header(38)='sp1'
       df(el,:)%header(39)='sp2'
       df(el,:)%header(40)='sp3'
-      df(el,:)%header(41)='pmsl.B'
-      df(el,:)%header(42)='pmsl.hc'
-      df(el,:)%header(43)='pmsl.MO'
-      df(el,:)%header(44)='t_2m.hc'
-      df(el,:)%header(45)='t_2m.MO'
+      df(el,:)%header(41)='pmsl-B'
+      df(el,:)%header(42)='pmsl-hc'
+      df(el,:)%header(43)='pmsl-MO'
+      df(el,:)%header(44)='t_2m-hc'
+      df(el,:)%header(45)='t_2m-MO'
       df(el,:)%header(46)='t_msl'
 
     CASE( 'TEMPMAKT' ) handle_maket
@@ -448,20 +448,21 @@ SUBROUTINE remove_voidSt()
 ! turn off empty station
     jj=0
     DO j=1,NY
-      IF ( value_field(2,j,t) /= iundef  ) THEN
+      IF ( value_field(2,j,t) /= iundef .and. &
+           value_field(1,j,t) /= 22222        ) THEN
         jj=jj+1
         value_field3(:,jj,t)=value_field2(:,j,t)
       ENDIF
     ENDDO
 
     NY=jj
-    IF ( value_field(1,NY,t)==22222 ) THEN
-      NY=jj-1        ! last stantion 22222
-      IF (LP > 4 ) WRITE (*,*) 'last stantion was remove'
-    ENDIF
+    ! IF ( value_field(1,NY,t)==22222 ) THEN
+      ! NY=jj-1        ! last stantion 22222
+      ! IF (LP > 4 ) WRITE (*,*) 'last stantion was remove'
+    ! ENDIF
 
-    df(el,t)%NY=NY
-    IF (LP > 1) WRITE(*,'("valid stantion=",i5," from ", i5)') NY,j-1
+    df(el,t)%NY = NY
+    IF (LP > 1) WRITE(*,'("valid stantion=",i5," from ", i5)') NY, j-1
 
 ENDSUBROUTINE remove_voidSt
 
