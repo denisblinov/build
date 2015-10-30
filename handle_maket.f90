@@ -150,14 +150,14 @@ SUBROUTINE handle()
         !value_field2(i+3,j,t)=value_field(i+3,j,t)                     ! direct of wind on level [degree]
         !value_field2(i+4,j,t)=value_field(i+4,j,t)                     ! speed  of wind on level [m/s]
       END FORALL
-      
+
       value_field2(96:142,:,t)=oundef
-      
+
       DO j=1,NY
         mz=value_field(93,j,t)
         mt=value_field(94,j,t)
         mw=value_field(95,j,t)
-        
+
         DO k=1,mz
           value_field2(96,j,t)=value_field(96,j,t)*unitPressure        ! PMSL
           value_field2(97,j,t)=(value_field(97,j,t)-1000)*0.1+unitTemp ! T_2M
@@ -176,13 +176,13 @@ SUBROUTINE handle()
           value_field2(124+k*3,j,t) = value_field(95+mz*5+mt*4+k*3,j,t)               ! speed of wind
         ENDDO
       ENDDO
-      
+
       WHERE( value_field( 11: 90,:,t) < 0 )  value_field2( 11: 90,:,t)=oundef
       WHERE( value_field( 96:142,:,t) < 0 )  value_field2( 96:142,:,t)=oundef
 
       df(el,:)%header(1)='index'
       df(el,:)%header(2)='index'
-      df(el,:)%header(3)='marker'
+      df(el,:)%header(3)='ToP'
       df(el,:)%header(4)='height'
       df(el,:)%header(5)='lat'
       df(el,:)%header(6)='lon'
@@ -476,36 +476,38 @@ SUBROUTINE remove_sort_voidSt()
   ENDIF
 
 ! remove empty station
-  jj1=0;jj2=0;jj3=0;
+  jj1=0; jj2=0; jj3=0
   DO j=1,NY
-    IF( value_field(2,j,t) /= iundef .and. value_field(3,j,t) == 8 )THEN
-      jj1=jj1+1
+    IF( value_field(2,j,t) /= iundef .and.  &
+        value_field(1,j,t) /= 999.   .and.  &
+        value_field(3,j,t) == 2         )THEN
+      jj1 = jj1+1
       value_field3(:,jj1,t)=value_field2(:,j,t)
     ENDIF
   ENDDO
-  jj2=jj1
+  jj2 = jj1
   DO j=1,NY
     IF( value_field(2,j,t) /= iundef .and. value_field(1,j,t) == 999. )THEN
-      jj2=jj2+1
+      jj2 = jj2+1
       value_field3(:,jj2,t)=value_field2(:,j,t)
     ENDIF
   ENDDO
-  jj3=jj2
+  jj3 = jj2
   DO j=1,NY
-    IF( value_field(2,j,t) /= iundef .and. value_field(1,j,t) /= 999. .and. value_field(3,j,t) == 2  )THEN
-      jj3=jj3+1
-      value_field3(:,jj3,t)=value_field2(:,j,t)
+    IF( value_field(2,j,t) /= iundef .and. value_field(3,j,t) == 8 )THEN
+      jj3 = jj3+1
+      value_field3(:,jj3,t) = value_field2(:,j,t)
     ENDIF
   ENDDO
 
-  df(el,t)%NYY(1)=jj1
-  df(el,t)%NYY(2)=jj2-jj1
-  df(el,t)%NYY(3)=jj3-jj2-jj1
+  df(el,t)%NYY(1) = jj1
+  df(el,t)%NYY(2) = jj2 - jj1
+  df(el,t)%NYY(3) = jj3 - jj2 - jj1
 
-  NY=df(el,t)%NYY(1) + df(el,t)%NYY(2) + df(el,t)%NYY(3)
-  df(el,t)%NY=NY
+  NY = df(el,t)%NYY(1) + df(el,t)%NYY(2) + df(el,t)%NYY(3)
+  df(el,t)%NY = NY
 
-  WRITE(*,*) 'valid stantion=', df(el,t)%NYY(1), df(el,t)%NYY(2), df(el,t)%NYY(3),' from ',j-1
+  WRITE(*,*) 'valid stantion=', df(el,t)%NYY(1:3),' from ', j-1, NY
 
 ENDSUBROUTINE remove_sort_voidSt
 

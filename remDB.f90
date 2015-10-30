@@ -428,7 +428,7 @@ PROGRAM ReadBASE
   CASE( 'maket' )   ! list off all station
 
     DO t=1,NT; DO el=1,NEL
-      NY=df(el,t)%NY
+      NY = df(el,t)%NY
 
       IF (FileName=='DATE_RECNAME')THEN
         oFileName = df(el,t)%charDATEHH//'_'//RECNAME(el)
@@ -457,16 +457,23 @@ PROGRAM ReadBASE
                     3(xi7), 3(xf7.1), 8(xi7), 7(xf7.1), 8(xi7), 6(xf7.1) ) )
 
       ELSEIF( RECNAME(el)=='TEMPMAKT' ) THEN
-        WRITE(ounit,'(100(a,"    "))') df(el,t)%header(2:96)
-        WRITE(ounit,'(i4, i3.3, i3, 3f10.2, i6.4, i9.4, 5f10.2, 80f10.1, 42f10.1, 4a2, 5i6)') &
+        ! WRITE(ounit,'(100(a,"    "))') df(el,t)%header(2:96)
+        WRITE(ounit,'(a6, a4, a7,a7,a8, 2(a6), 88(xa8))')  & 
+                     (trim(df(el,t)%header(i)),i=2,8),  &
+                     (trim(df(el,t)%header(i)),i=11,96)
+        WRITE(ounit, 2003 ) &
              (( INT(var(el,t)%p2(1,j)), INT(var(el,t)%p2(2,j)),                &
-             INT(var(el,t)%p2(3,j)), (var(el,t)%p2(4:6,j)),                    &
-             INT(var(el,t)%p2(7:8,j)),        &  ! var(el,t)%p2(9:10,j), - reserved fields
-             var(el,t)%p2(96:100,j),          &
-             (var(el,t)%p2(11:90,j)),         &
-             (var(el,t)%p2(101:142,j)),       &  ! var(el,t)%p2(143:146,j), - reserved fields
-             INT((var(el,t)%p2(147:150,j))),  &
-             INT(var(el,t)%p2(91:95,j))      ),j=1,NY )
+                INT(var(el,t)%p2(3,j)),    &
+                INT(var(el,t)%p2(4,j)), (var(el,t)%p2(5:6,j)),              &
+                INT(var(el,t)%p2(7:8,j)),        &  ! var(el,t)%p2(9:10,j), - reserved fields
+                var(el,t)%p2(11:90,j),           &
+                var(el,t)%p2(96:100,j),          &
+                (var(el,t)%p2(101:142,j)),       &  ! var(el,t)%p2(143:146,j), - reserved fields
+                INT((var(el,t)%p2(147:150,j))),  &
+                INT(var(el,t)%p2(91:95,j))      ),j=1,NY )
+
+       2003 FORMAT( (i3,i3.3, xi3, xi6,xf6.2,xf7.2, 2(xi5.4), &
+                     5(xf8.1), 80(xf8.1), 42(xf8.1), 4a2, 5i6) )
 
       ELSEIF( RECNAME(el)=='TEBDTMAK' ) THEN
         WRITE(ounit,'("  index sign    height  lat      lon      n         NT     jk    reserv    ")')
