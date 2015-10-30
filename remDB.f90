@@ -18,6 +18,10 @@
 ! - describe DefGrid
 ! - add print legend of variables for maket and csv: long name and unit
 ! - delete SYNOPDOP from input - only for internal calling
+! - good format output for TEMPXXXX 
+! - check field at surface, tropopause, vmax etc in TEMPMAKT
+! - right format for csv-output
+! - filter for COSMO-ENA13: add rotate convertion
 
 PROGRAM ReadBASE     
   USE  RemDB
@@ -458,22 +462,30 @@ PROGRAM ReadBASE
 
       ELSEIF( RECNAME(el)=='TEMPMAKT' ) THEN
         ! WRITE(ounit,'(100(a,"    "))') df(el,t)%header(2:96)
-        WRITE(ounit,'(a6, a4, a7,a7,a8, 2(a6), 88(xa8))')  & 
-                     (trim(df(el,t)%header(i)),i=2,8),  &
-                     (trim(df(el,t)%header(i)),i=11,96)
+        WRITE(ounit,'(a6, a4, a7,a7,a8, 2(a6), 5(xa6),75(xa5), 5(xa6), 42(xa6), 8(xa5))')  & 
+                     (trim(df(el,t)%header(i)),i=2,8),   &
+                     (trim(df(el,t)%header(i)),i=11,90),  &
+                     (trim(df(el,t)%header(i)),i=96,142)
         WRITE(ounit, 2003 ) &
              (( INT(var(el,t)%p2(1,j)), INT(var(el,t)%p2(2,j)),                &
                 INT(var(el,t)%p2(3,j)),    &
                 INT(var(el,t)%p2(4,j)), (var(el,t)%p2(5:6,j)),              &
                 INT(var(el,t)%p2(7:8,j)),        &  ! var(el,t)%p2(9:10,j), - reserved fields
-                var(el,t)%p2(11:90,j),           &
+                ! var(el,t)%p2(11:90,j),           &
+                ((INT(var(el,t)%p2(jj,j)),(var(el,t)%p2(jj+1,j)),(var(el,t)%p2(jj+2,j)),INT(var(el,t)%p2(jj+3,j)),INT(var(el,t)%p2(jj+4,j)) ),jj=11,90,5),           &
                 var(el,t)%p2(96:100,j),          &
                 (var(el,t)%p2(101:142,j)),       &  ! var(el,t)%p2(143:146,j), - reserved fields
                 INT((var(el,t)%p2(147:150,j))),  &
                 INT(var(el,t)%p2(91:95,j))      ),j=1,NY )
 
        2003 FORMAT( (i3,i3.3, xi3, xi6,xf6.2,xf7.2, 2(xi5.4), &
-                     5(xf8.1), 80(xf8.1), 42(xf8.1), 4a2, 5i6) )
+                     1(xi6,2(xf6.1),2(xi6)), 15(xi5,2(xf5.1),2(xi5)),  &
+                     1(xi6,2(xf6.1),2(xi6)), &
+                     6(xi6,xf6.1,2(xi6)), &
+                     6(xi6,2(xi6)), &
+                     ! 5(xf8.1), 42(xf8.1), 4a2, 5i6) )
+                     x4a2, 5(xi4)) )
+                     ! 80(xf8.1), 5(xf8.1), 42(xf8.1), 4a2, 5i6) )
 
       ELSEIF( RECNAME(el)=='TEBDTMAK' ) THEN
         WRITE(ounit,'("  index sign    height  lat      lon      n         NT     jk    reserv    ")')

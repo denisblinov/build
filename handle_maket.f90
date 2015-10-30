@@ -17,7 +17,7 @@ SUBROUTINE handle()
 
   set_id: SELECT CASE ( RECNAME(el) )
   CASE( 'SYNOPMAK','SYNOPDOP','TEMPMAKT','TEBDTMAK','TEBDWMAK','TEMPALLC' )
-    ListSt(1:NY)=INT(value_field(1,1:NY,t))*1000+INT(value_field(2,:,t))
+    ListSt(1:NY) = INT(value_field(1,1:NY,t))*1000+INT(value_field(2,:,t))
 
     DO j=1,NY
       WRITE(idST(j),'(i5.5,a3)')    ListSt(j),'   '
@@ -137,7 +137,7 @@ SUBROUTINE handle()
         value_field2(12,j,t)=(value_field(12,j,t)-1000.)*0.1+unitTemp ! T on 1000gPa
         value_field2(13,j,t)=value_field(13,j,t)*0.1                  ! Td (rcld-saturation deficit) on level 1000gPa
        !value_field2(14,j,t)=value_field(14,j,t)                      ! direct of wind on level [degree]
-       !value_field2(15,j,t)=value_field(15,j,t)                      ! speed  of wind on level [m/s]
+       !value_field2(15,j,t)=value_field(15,j,t)                      ! speed of wind on level [m/s]
        !value_field2(101:124,j,t)=value_field(101:124,j,t)            ! data on level tropopause P t ff ddd
        !value_field2(125:142,j,t)=value_field(125:142,j,t)            ! data on level maxWind P(H) t ff ddd. P>0 .or. H<0
        !value_field2(143:146,j,t)=value_field(143:146,j,t)            ! reserv
@@ -154,9 +154,9 @@ SUBROUTINE handle()
       value_field2(96:142,:,t)=oundef
 
       DO j=1,NY
-        mz=value_field(93,j,t)
-        mt=value_field(94,j,t)
-        mw=value_field(95,j,t)
+        mz = value_field(93,j,t) ! 1 or 0
+        mt = value_field(94,j,t) ! 1 or 0
+        mw = value_field(95,j,t) ! 1 or 0
 
         DO k=1,mz
           value_field2(96,j,t)=value_field(96,j,t)*unitPressure        ! PMSL
@@ -180,55 +180,6 @@ SUBROUTINE handle()
       WHERE( value_field( 11: 90,:,t) < 0 )  value_field2( 11: 90,:,t)=oundef
       WHERE( value_field( 96:142,:,t) < 0 )  value_field2( 96:142,:,t)=oundef
 
-      df(el,:)%header(1)='index'
-      df(el,:)%header(2)='index'
-      df(el,:)%header(3)='ToP'
-      df(el,:)%header(4)='height'
-      df(el,:)%header(5)='lat'
-      df(el,:)%header(6)='lon'
-      df(el,:)%header(7)='hh:mm'
-      df(el,:)%header(8)='MM:dd'
-      df(el,:)%header(11)='H1000'
-      df(el,:)%header(12)='T1000'
-      df(el,:)%header(13)='Td1000'
-      df(el,:)%header(14)='WD1000'
-      df(el,:)%header(15)='WS1000'
-      df(el,:)%header(16)='H925'
-      df(el,:)%header(17)='T925'
-      df(el,:)%header(18)='Td925'
-      df(el,:)%header(19)='WD925'
-      df(el,:)%header(20)='WS925'
-      df(el,:)%header(21)='H850'
-      df(el,:)%header(22)='T850'
-      df(el,:)%header(23)='Td850'
-      df(el,:)%header(24)='WD850'
-      df(el,:)%header(25)='WS850'
-      df(el,:)%header(26)='H700'
-      df(el,:)%header(27)='T700'
-      df(el,:)%header(28)='Td700'
-      df(el,:)%header(29)='WD700'
-      df(el,:)%header(30)='WS700'
-      df(el,:)%header(31)='H500'
-      df(el,:)%header(32)='T500'
-      df(el,:)%header(33)='Td500'
-      df(el,:)%header(34)='WD500'
-      df(el,:)%header(35)='WS500'
-      df(el,:)%header(36)='H400'
-      df(el,:)%header(37)='T400'
-      df(el,:)%header(38)='Td400'
-      df(el,:)%header(39)='WD400'
-      df(el,:)%header(40)='WS400'
-      df(el,:)%header(41)='H300'
-      df(el,:)%header(42)='T300'
-      df(el,:)%header(43)='Td300'
-      df(el,:)%header(44)='WD300'
-      df(el,:)%header(45)='WS300'
-      df(el,:)%header(46)='H250'
-      df(el,:)%header(47)='T250'
-      df(el,:)%header(48)='Td250'
-      df(el,:)%header(49)='WD250'
-      df(el,:)%header(50)='WS250'
-      
       df(el,:)%clevel(11)='1000'
       df(el,:)%clevel(16)='925'
       df(el,:)%clevel(21)='850'
@@ -258,6 +209,43 @@ SUBROUTINE handle()
       df(el,:)%clevel(134)='vmax'
       df(el,:)%clevel(137)='vmax'
       df(el,:)%clevel(140)='vmax'
+
+      df(el,:)%header(1)='index'
+      df(el,:)%header(2)='index'
+      df(el,:)%header(3)='ToP'
+      df(el,:)%header(4)='height'
+      df(el,:)%header(5)='lat'
+      df(el,:)%header(6)='lon'
+      df(el,:)%header(7)='hh:mm'
+      df(el,:)%header(8)='MM:dd'
+      df(el,:)%header(11)='H1000'
+      df(el,:)%header(12)='T1000'
+      df(el,:)%header(13)='dD1000'
+      df(el,:)%header(14)='WD1000'
+      df(el,:)%header(15)='WS1000'
+
+      FORALL( k = 16:86:5 )
+        df(el,:)%header(k)   = 'H'//df(el,1)%clevel(k)
+        df(el,:)%header(k+1) = 'T'//df(el,1)%clevel(k)
+        df(el,:)%header(k+2) = 'dD'//df(el,1)%clevel(k)
+        df(el,:)%header(k+3) = 'WD'//df(el,1)%clevel(k)  !DD
+        df(el,:)%header(k+4) = 'WS'//df(el,1)%clevel(k)  !FF
+      ENDFORALL
+
+      df(el,:)%header( 96) = 'pSurf'
+      df(el,:)%header( 97) = 'tSurf'
+      df(el,:)%header( 98) = 'dDSurf'
+      df(el,:)%header( 99) = 'wDSurf'
+      df(el,:)%header(100) = 'wSSurf'
+
+      df(el,t)%header(101:124:4) = 'PTrop'
+      df(el,t)%header(102:124:4) = 'TTrop'
+      df(el,t)%header(103:124:4) = 'WDTrop'
+      df(el,t)%header(104:124:4) = 'WSTrop'
+
+      df(el,t)%header(125:142:3) = 'PTrop'
+      df(el,t)%header(126:142:3) = 'WDTrop'
+      df(el,t)%header(127:142:3) = 'WSTrop'
 
 !     string Type(Sr) RaRaSaSa OSurf OTropop OmaxW" 
 
@@ -502,12 +490,13 @@ SUBROUTINE remove_sort_voidSt()
 
   df(el,t)%NYY(1) = jj1
   df(el,t)%NYY(2) = jj2 - jj1
-  df(el,t)%NYY(3) = jj3 - jj2 - jj1
+  df(el,t)%NYY(3) = jj3 - jj2
+  ! WRITE(*,*) jj1, jj2, jj3
 
   NY = df(el,t)%NYY(1) + df(el,t)%NYY(2) + df(el,t)%NYY(3)
   df(el,t)%NY = NY
 
-  WRITE(*,*) 'valid stantion=', df(el,t)%NYY(1:3),' from ', j-1, NY
+  WRITE(*,*)'valid stantion=', df(el,t)%NYY(1:3),' from ', NY
 
 ENDSUBROUTINE remove_sort_voidSt
 
