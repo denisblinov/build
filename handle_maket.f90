@@ -1,16 +1,22 @@
 SUBROUTINE handle()
+! TODO:
+! - check coordinate of TEMP station in SLOVPURx - bring double string
+!
   
   INTEGER*4 mZ, mT, mW  ! number level on surface{0-1}, tropopause {0-6}, windmax {0-6} for TEMPMAKT
   REAL*4       unitTemp, unitPressure, unitCloud
+  LOGICAL, ALLOCATABLE, DIMENSION(:) :: filterSt
+  ! LOGICAL, DIMENSION(:) :: filterSt
+  ! LOGICAL, DIMENSION(:) :: filterSt
 
 !------------SET units for variable P and T------------------------
   SELECT CASE( trim(typefile) )
   CASE('maket','csv','stantion')   !  [C] and [gPa]
-    unitTemp=0.0
-    unitPressure=0.1
+    unitTemp     = 0.0
+    unitPressure = 0.1
   CASE DEFAULT                     !  [K] and [Pa]
-    unitTemp=273.15
-    unitPressure=10.0
+    unitTemp     = 273.15
+    unitPressure = 10.0
   ENDSELECT
   unitCloud=10    ! [%]
 !------------------------------------------------------------------
@@ -49,8 +55,8 @@ SUBROUTINE handle()
       value_field2(41:43,j,t)=value_field(41:43,j,t)*0.1                  ! PBagrCorrect, PHCorrect, PExetter [gpa]
       value_field2(44:46,j,t)=value_field(44:46,j,t)*0.1                  ! THCorrect, TPExetter, Tmsl [C]
     END FORALL
-    ! отрицательные значени€ - это забракованные ASOI данные
-    WHERE (  value_field(8:13,:,t) < 0  )  value_field2(8:13,:,t)=oundef
+    ! Negative values is marker bad values from ASOI
+    WHERE ( value_field(8:13,:,t) < 0 )  value_field2(8:13,:,t)=oundef
     ! ¬ базе встречаютс€ значени€ осадков, равные +9990. 
     ! приходитс€ их приравнивать к константе отсутстви€.
     WHERE( value_field(29:31,:,t) == 9990.0 ) value_field2(29:31,:,t)=oundef
@@ -60,7 +66,7 @@ SUBROUTINE handle()
     ! «адать знак тенденции согласно  Ќ-01
     WHERE( value_field(14,:,t) > 4.0 ) value_field2(15,:,t)=-value_field2(15,:,t)
 
-    ! ÷икл для подстановки координат из словар€
+    ! ÷икл дл€ подстановки координат из словар€
     DO j=1,NY
       DO jj=1,17000
         IF( ListSt(j) == dictionarySt(1,jj) )THEN
@@ -79,52 +85,52 @@ SUBROUTINE handle()
        WHERE( ListSt(:)==2629 ) value_field2(5,:,t)= 104.
        WHERE( ListSt(:)==2667 ) value_field2(5,:,t)=   4.
 
-      df(el,:)%header(1)='index'
-      df(el,:)%header(2)='index'
-      df(el,:)%header(3)='lat'
-      df(el,:)%header(4)='lon'
-      df(el,:)%header(5)='height'
-      df(el,:)%header(6)='cP'  ! 'PS_corr'
-      df(el,:)%header(7)='gps'
-      df(el,:)%header(8)='ps'
-      df(el,:)%header(9)='pmsl'
-      df(el,:)%header(10)='t_2m'
-      df(el,:)%header(11)='td_2m'
-      df(el,:)%header(12)='dd_10m'
-      df(el,:)%header(13)='ff_10m'
-      df(el,:)%header(14)='typTPS'
-      df(el,:)%header(15)='tps'
-      df(el,:)%header(16)='hVV'
-      df(el,:)%header(17)='tSunl'
-      df(el,:)%header(18)='clct'
-      df(el,:)%header(19)='clcl_clcm'
-      df(el,:)%header(20)='typLC'
-      df(el,:)%header(21)='typMC'
-      df(el,:)%header(22)='typHC'
-      df(el,:)%header(23)='hBasLC'
-      df(el,:)%header(24)='WW'
-      df(el,:)%header(25)='pWW'
-      df(el,:)%header(26)='tMin2m'
-      df(el,:)%header(27)='tMax2m'
-      df(el,:)%header(28)='tMinG'
-      df(el,:)%header(29)='R6'
-      df(el,:)%header(30)='R12'
-      df(el,:)%header(31)='R24'
-      df(el,:)%header(32)='t_g'
-      df(el,:)%header(33)='hSnow'
-      df(el,:)%header(34)='shiftR'
-      df(el,:)%header(35)='E4'
-      df(el,:)%header(36)='E1'
-      df(el,:)%header(37)='E3'
-      df(el,:)%header(38)='sp1'
-      df(el,:)%header(39)='sp2'
-      df(el,:)%header(40)='sp3'
-      df(el,:)%header(41)='pmsl-B'
-      df(el,:)%header(42)='pmsl-hc'
-      df(el,:)%header(43)='pmsl-MO'
-      df(el,:)%header(44)='t_2m-hc'
-      df(el,:)%header(45)='t_2m-MO'
-      df(el,:)%header(46)='t_msl'
+      df(el,:)%header(1)  = 'index'
+      df(el,:)%header(2)  = 'index'
+      df(el,:)%header(3)  = 'lat'
+      df(el,:)%header(4)  = 'lon'
+      df(el,:)%header(5)  = 'height'
+      df(el,:)%header(6)  = 'mPS'  ! 'PS_corr'
+      df(el,:)%header(7)  = 'gps'
+      df(el,:)%header(8)  = 'ps'
+      df(el,:)%header(9)  = 'pmsl'
+      df(el,:)%header(10) = 't2m'
+      df(el,:)%header(11) = 'td2m'
+      df(el,:)%header(12) = 'dd10m'
+      df(el,:)%header(13) = 'ff10m'
+      df(el,:)%header(14) = 'typTPS'
+      df(el,:)%header(15) = 'tps'
+      df(el,:)%header(16) = 'hVV'
+      df(el,:)%header(17) = 'tSunl'
+      df(el,:)%header(18) = 'clct'
+      df(el,:)%header(19) = 'clcl_clcm'
+      df(el,:)%header(20) = 'typLC'
+      df(el,:)%header(21) = 'typMC'
+      df(el,:)%header(22) = 'typHC'
+      df(el,:)%header(23) = 'hBasLC'
+      df(el,:)%header(24) = 'WW'
+      df(el,:)%header(25) = 'pWW'
+      df(el,:)%header(26) = 'tMin2m'
+      df(el,:)%header(27) = 'tMax2m'
+      df(el,:)%header(28) = 'tMinG'
+      df(el,:)%header(29) = 'R6'
+      df(el,:)%header(30) = 'R12'
+      df(el,:)%header(31) = 'R24'
+      df(el,:)%header(32) = 't_g'
+      df(el,:)%header(33) = 'hSnow'
+      df(el,:)%header(34) = 'shiftR'
+      df(el,:)%header(35) = 'E4'
+      df(el,:)%header(36) = 'E1'
+      df(el,:)%header(37) = 'E3'
+      df(el,:)%header(38) = 'sp1'
+      df(el,:)%header(39) = 'sp2'
+      df(el,:)%header(40) = 'sp3'
+      df(el,:)%header(41) = 'pmsl-B'
+      df(el,:)%header(42) = 'pmsl-hc'
+      df(el,:)%header(43) = 'pmsl-MO'
+      df(el,:)%header(44) = 't2m-hc'
+      df(el,:)%header(45) = 't2m-MO'
+      df(el,:)%header(46) = 'tmsl'
 
     CASE( 'TEMPMAKT' ) handle_maket
       FORALL( j=1:NY )
@@ -154,9 +160,9 @@ SUBROUTINE handle()
       value_field2(96:142,:,t)=oundef
 
       DO j=1,NY
-        mz = value_field(93,j,t) ! 1 or 0
-        mt = value_field(94,j,t) ! 1 or 0
-        mw = value_field(95,j,t) ! 1 or 0
+        mz = value_field(93,j,t) ! 0 or 1
+        mt = value_field(94,j,t) ! 0-6
+        mw = value_field(95,j,t) ! 0-6
 
         DO k=1,mz
           value_field2(96,j,t)=value_field(96,j,t)*unitPressure        ! PMSL
@@ -373,7 +379,7 @@ SUBROUTINE handle()
 
     END FORALL
     ! отрицательные значени€ - это забракованные данные задачей CONTREL
-    WHERE (  value_field(11:12,:,t) < 0  )  value_field2(11:12,:,t)=oundef
+    WHERE (  value_field(11:12,:,t) < 0  )  value_field2(11:12,:,t) = oundef
 
     df(el,:)%header(1)='index'
     df(el,:)%header(2)='number'
@@ -393,14 +399,28 @@ SUBROUTINE handle()
   ENDSELECT handle_maket
 
   ! »зменить входную константу отсутстви€ данных на выходную
-  WHERE( value_field == iundef  )   value_field2=oundef
+  WHERE( value_field == iundef )  value_field2 = oundef
   
   SELECT CASE( RECNAME(el) )
   CASE( 'SYNOPMAK','SYNOPDOP','TEMPMAKT','TEBDTMAK','TEBDWMAK','TEMPALLC' )
 
-    IF(filterAREA=='RU40') THEN
-      WHERE( value_field(1,:,t) > 40 .and. value_field(1,:,t) < 100 )  value_field(2,:,t)=iundef   ! only for near Russia station 1-40
+    ALLOCATE( filterSt(NY) )
+    filterSt = .FALSE.
+
+    IF(LP > 1) WRITE(*,*) 'filterArea = ', filterArea
+
+    IF    ( filterArea == 'RU40'  ) THEN
+      WHERE( value_field(1,:,t) > 40 .and. value_field(1,:,t) < 100 )  &
+                filterSt = iundef  ! only for near Russia station 1-40
+
+    ELSEIF( (filterArea == 'cm_ena' .or. filterArea == 'cm_ENA') .and. &
+            RECNAME(el)(1:5) == 'SYNOP' )THEN
+      CALL filterAreaCmENA( value_field2(3,:,t),value_field2(4,:,t), NY, filterSt )
+
     ENDIF
+
+    WHERE( filterSt ) value_field(2,:,t) = iundef
+    DEALLOCATE( filterSt )
 
     IF( RECNAME(el)=='TEMPMAKT' )THEN
       CALL remove_sort_voidSt()
@@ -410,26 +430,64 @@ SUBROUTINE handle()
 
   CASE( 'SHIPBMAK' )
 
-    IF(filterAREA=='RU40') THEN
+    IF( filterArea=='RU40' )THEN
       WHERE( value_field(3,:,t) > 30     &
-       .and. value_field(4,:,t) >  0  )  value_field(2,:,t)=iundef   ! area lat[30-90], lon[0-180]
+       .and. value_field(4,:,t) >  0 )  value_field(2,:,t) = iundef   ! area lat[30-90], lon[0-180]
     ENDIF
 
     CALL remove_sort_voidSt2()
 
   CASE( 'AIREPMAK' )
     CALL remove_sort_voidSt2()
-    IF(filterAREA=='RU40') THEN
+    IF( filterAREA=='RU40' )THEN
       WHERE( value_field(5,:,t) > 30   .and.   &
              value_field(6,:,t) >  0  )  value_field(2,:,t)=iundef   ! area lat[30-90], lon[0-180]
     ENDIF
 
   CASE DEFAULT 
-    value_field3(1:NX,1:NY,t)=value_field2(1:NX,1:NY,t)
+    value_field3(1:NX,1:NY,t) = value_field2(1:NX,1:NY,t)
 
   ENDSELECT
   
 ENDSUBROUTINE HANDLE
+
+SUBROUTINE filterAreaCmENA( gLat, gLon, NY, filterSt )
+
+  ! integer*4, parameter :: NX=700 !       
+  ! integer*4, parameter :: NY=620 !
+  INTEGER, INTENT(IN) :: NY
+  real*4, parameter ::  pollat     =  25 ! latitude of the rotated north pole
+  real*4, parameter ::  pollon     = -90 ! longitude of the rotated north pole
+  real*4, parameter ::  rlon_start = -60 ! first longitude of the grid
+  real*4, parameter ::  rlat_start = -30 ! first latitude of the grid
+  real*4, parameter ::  rlon_end   =  60 ! last longitude of the grid
+  real*4, parameter ::  rlat_end   =  30 ! last latitude of the grid
+  real*4, parameter ::  polgam     =   0 ! angle between the north poles of the systems
+  REAL*4 :: phi2phirot, rla2rlarot
+  ! INTEGER :: inSt, outSt
+
+  REAL*8,DIMENSION(NY), INTENT(IN) :: glon, glat
+  REAL*4,DIMENSION(NY)   :: rlon, rlat
+  LOGICAL, INTENT(OUT) :: filterSt(NY)
+
+  DO i=1,NY
+    rlat(i) = phi2phirot ( REAL(glat(i),4), REAL(glon(i),4), pollat, pollon )
+    rlon(i) = rla2rlarot ( REAL(glat(i),4), REAL(glon(i),4), pollat, pollon, polgam )
+  ENDDO
+  ! CALL STATS(rlat,NY,iundef,'rlat',1)
+  ! CALL STATS(rlon,NY,iundef,'rlon',0)
+  
+  ! IF( LP>4) WRITE(*,*)  rlon(1:10)
+  ! IF( LP>4) WRITE(*,*)  glon(1:10)
+  ! IF( LP>4) WRITE(*,*)  rlat(1:10)
+  ! IF( LP>4) WRITE(*,*)  glat(1:10)
+ 
+  filterSt = .TRUE.
+  WHERE( (rlat > rlat_start .and. rlat < rlat_end) .and. &
+         (rlon > rlon_start .and. rlon < rlon_end) ) filterSt = .FALSE.
+  IF( LP>2) WRITE(*,*) COUNT(filterSt), 'stations will be rejected filterAreaCmENA'
+
+ENDSUBROUTINE filterAreaCmENA
 
 SUBROUTINE remove_voidSt()
 
@@ -439,7 +497,7 @@ SUBROUTINE remove_voidSt()
       IF ( value_field(2,j,t) /= iundef .and. &
            value_field(1,j,t) /= 22222        ) THEN
         jj=jj+1
-        value_field3(:,jj,t)=value_field2(:,j,t)
+        value_field3(:,jj,t) = value_field2(:,j,t)
       ENDIF
     ENDDO
 
@@ -470,14 +528,14 @@ SUBROUTINE remove_sort_voidSt()
         value_field(1,j,t) /= 999.   .and.  &
         value_field(3,j,t) == 2         )THEN
       jj1 = jj1+1
-      value_field3(:,jj1,t)=value_field2(:,j,t)
+      value_field3(:,jj1,t) = value_field2(:,j,t)
     ENDIF
   ENDDO
   jj2 = jj1
   DO j=1,NY
     IF( value_field(2,j,t) /= iundef .and. value_field(1,j,t) == 999. )THEN
       jj2 = jj2+1
-      value_field3(:,jj2,t)=value_field2(:,j,t)
+      value_field3(:,jj2,t) = value_field2(:,j,t)
     ENDIF
   ENDDO
   jj3 = jj2

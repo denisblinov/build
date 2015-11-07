@@ -4,7 +4,7 @@
 !
 ! Description: reading RHM-database
 !
-! Author: Denis Blinov, denisblinov@ya.ru 2008-2014
+! Author: Denis Blinov, denisblinov@ya.ru 2008-2015
 ! Resourse: 
 ! - library LibServHMC.a (mandatory) for reading data from remote-base
 ! - library bankload.a (optional) for reading data from local-base
@@ -13,7 +13,7 @@
 !
 ! TODO:
 ! - Внедрить подпрорамму проверки ошибок/аварийного завершения HANDLE_ERROR
-! - system printing and OUT message 
+! - format printing and OUT message 
 ! - optimize section OUTPUT
 ! - describe DefGrid
 ! - add print legend of variables for maket and csv: long name and unit
@@ -182,7 +182,7 @@ PROGRAM ReadBASE
     oundef=-9999.
   ENDSELECT
   
-  IF(LP>4) WRITE(*,*)HUGE(oundef),MAXEXPONENT(oundef),RADIX(oundef)
+  IF(LP>4) WRITE(*,*) HUGE(oundef),MAXEXPONENT(oundef),RADIX(oundef)
   
 !------------------------------------------------------
   WRITE(*,*)  ! start output on terminal
@@ -250,8 +250,8 @@ PROGRAM ReadBASE
 
   LoopRecord:  do el=1, NEL        ! record cycle
 
-    df(el,:)%RECNAME=RECNAME(el)
-    df(el,:)%RECNAME=RECNAME(el)
+    df(el,:)%RECNAME = RECNAME(el)
+    df(el,:)%RECNAME = RECNAME(el)
 
     !    ----------infoGrid---------------
     IF (infoGrid .and. cycleBASE )  THEN
@@ -271,9 +271,12 @@ PROGRAM ReadBASE
     IF (infoRecord)  CALL array_def(DefRec(1:60) )
     !WRITE (6,'(60i8)') DefRec(1:60)
 
-    df(el,:)%NX=DefRec(17)
-    IF ( cycleBASE ) df(el,:)%NY=DefRec(18)
-    IF ( statBASE )  df(el,:)%NY=DefRec(36)
+    df(el,:)%NX = DefRec(17)
+    IF(     cycleBASE )THEN
+        df(el,:)%NY = DefRec(18)
+    ELSEIF ( statBASE )THEN
+        df(el,:)%NY = DefRec(36)
+    ENDIF
 
   ENDDO  LoopRecord                                ! cycle RECORD
 
@@ -281,9 +284,9 @@ PROGRAM ReadBASE
 
   SELECT CASE (RECNAME(1))
   CASE( 'SYNOPMAK','SYNOPDOP','TEMPMAKT','TEBDTMAK','TEBDWMAK','TEMPALLC' )
-    IF(HOST=='local' ) THEN
+    IF( HOST=='local' ) THEN
       CALL RDSLOV('SHOT',260601_8,'SLOVPUR3',dictionarySt,dictionaryStName,nST,codeRETURN)
-      IF (LP >2 ) WRITE(*,*) ' codeRETURN from RDSLOV =',codeRETURN, nST
+      IF ( LP >2 ) WRITE(*,*) ' codeRETURN from RDSLOV =',codeRETURN, nST
     ELSE
       IF( nameBASE /= 'SHOT' ) CALL OPENRemDB(codeOPEN, 'SHOT', 1_4, codeRETURN)
       CALL RDFQremdb('SHOT',260601_4,'SLOVPUR3',dictionaryStation,codeRETURN)
@@ -302,8 +305,8 @@ PROGRAM ReadBASE
 
     LoopTime:  DO t=1,NT       ! time cycle
 
-      NX=df(el,t)%NX
-      NY=df(el,t)%NY
+      NX = df(el,t)%NX
+      NY = df(el,t)%NY
 
       df(el,t)%year     = year(t)
       df(el,t)%month    = month(t)
@@ -311,17 +314,17 @@ PROGRAM ReadBASE
       df(el,t)%minute   = minute(t)
       df(el,t)%second   = 0
       IF( RECNAME(el) == 'SYNOPDOP' )THEN
-        df(el,t)%hour=hour(t)+3
+        df(el,t)%hour = hour(t)+3
       ELSE
-        df(el,t)%hour=hour(t)
+        df(el,t)%hour = hour(t)
       ENDIF
 
       WRITE(char10,'(i4.4, 3(i2.2))') df(el,t)%year, df(el,t)%month, df(el,t)%day, df(el,t)%hour
-      df(el,t)%charDATEHH=char10
+      df(el,t)%charDATEHH = char10
 
       NumbSt=NY
       ALLOCATE( value_field(NX,NY,NT), value_field2(NX,NY,NT), value_field3(NX,NY,NT) )
-      value_field=oundef
+      value_field = oundef
 
       ALLOCATE( iArray(NX,NY,NEL), ListSt(NumbSt), idST(NumbSt) )
       IF(LP > 2)WRITE(*,"('read record',a10,i10,i3.2,' (',i5,',',i4,')')")RECNAME(el), Date(t), hour(t), NY, NX
@@ -356,7 +359,7 @@ PROGRAM ReadBASE
         ENDIF
       ENDIF
 
-      IF(codeRETURN/=0)THEN
+      IF( codeRETURN/=0 )THEN
         IF (LP >5 ) WRITE(*,*) RECNAME(el),Date(t),hour(t),' codeRETURN= ',codeRETURN
       ENDIF
       !WRITE(FileName,'(i8,i2.2,a4)') Date, hour,RECNAME;     WRITE(*,*) 'numberElements = ',NEL
@@ -364,16 +367,16 @@ PROGRAM ReadBASE
 
       value_field2 = value_field
 
-      IF (LP > 3 )  WRITE (*,*) '  before handle  value_field ', t, df(el,t)%NY
-! handle reading array from base
+      IF (LP > 3)  WRITE (*,*) '  before handle  value_field ', t, df(el,t)%NY
+      ! handle reading array from base
       CALL HANDLE()
 
-      IF (LP > 3 )  WRITE (*,*) '  after handle  value_field ', t, df(el,t)%NY
+      IF (LP > 3)  WRITE (*,*) '  after handle  value_field ', t, df(el,t)%NY
       !var(el,t)=outfield(value_field2(1:NX,1:NY,t))
       var(el,t)=outfield(value_field3(1:NX,1:NY,t))
 
       DEALLOCATE(value_field, value_field2, value_field3, idST, ListSt, iArray )
-      IF (LP > 3 )  WRITE (*,*) '  after deallocation  value_field '
+      IF (LP > 3)  WRITE (*,*) '  after deallocation  value_field '
 
     ENDDO  LoopTime     ! cycle  time
 
@@ -422,9 +425,10 @@ PROGRAM ReadBASE
       ENDIF
 
       OPEN (ounit,file=trim(filename), position='append')
-      WRITE(ounit,*) 'DATE=',Date(t), hour(t), 'zab=',startTerm,'format=',fmOU;
+      WRITE(ounit,*) 'DATE=',Date(t), hour(t), 'zab=',startTerm,'format=',fmOU
 
-      WRITE(ounit,'(10E15.6)') (( var(el,t)%p2(i,j),i=oNXstart,oNXend),j=oNYstart, oNYend, incrYdir )
+      WRITE(ounit,'(10E15.6)') (( var(el,t)%p2(i,j),i=oNXstart,oNXend),      &
+                                                    j=oNYstart,oNYend,incrYdir)
       CLOSE(ounit)
 
     ENDDO;ENDDO  ! cycle  RECORD ; cycle  time
@@ -442,12 +446,12 @@ PROGRAM ReadBASE
 
       IF (RECNAME(el)=='SYNOPDOP' .or. RECNAME(el)=='SYNOPMAK') THEN
        !WRITE(ounit,'(45(a,"    "))') (trim(df(el,t)%header(i)),i=2,45)
-        WRITE(ounit,'(a5,a8,a9,a7,a4,40(x,a7))') (trim(df(el,t)%header(i)),i=2,46)
-        WRITE(ounit,2002)               ( &
-         ( INT(var(el,t)%p2(1,j)), INT(var(el,t)%p2(2,j)),      &
-           (var(el,t)%p2(3:4,j)), INT(var(el,t)%p2(5,j)),       &
-           INT(var(el,t)%p2(6:9,j)),                            &
-           var(el,t)%p2(10:11,j),                               &
+        WRITE(ounit,2210) (trim(df(el,t)%header(i)),i=2,46)
+        WRITE(ounit,2211)               ( &
+         ( INT(var(el,t)%p2(1,j)), INT(var(el,t)%p2(2,j)),      & ! index
+           (var(el,t)%p2(3:4,j)), INT(var(el,t)%p2(5,j)),       & ! lon,lat,h
+           INT(var(el,t)%p2(6:9,j)),                            & !
+           var(el,t)%p2(10:11,j),                               & ! 
            INT(var(el,t)%p2(12,j)), INT(var(el,t)%p2(13,j)),    &
            INT(var(el,t)%p2(14,j)),  var(el,t)%p2(15,j),        &
            (var(el,t)%p2(16:17,j)),      &
@@ -457,8 +461,9 @@ PROGRAM ReadBASE
            (var(el,t)%p2(41:46,j)) ), j=1,NY )
         !WRITE(ounit,'(i2)') ( (int(var(el,t)%p2(1,j))),j=1,NY)
 
-      2002 FORMAT( (i2,i3.3, xf7.3,xf8.3, xi6, xi3, xi7, xi7,xi7, xf7.1,xf7.1, &
-                    3(xi7), 3(xf7.1), 8(xi7), 7(xf7.1), 8(xi7), 6(xf7.1) ) )
+      2210 FORMAT(( a5,a8,a9,a7,a4,3a6,2a6,35(x,a6) ))
+      2211 FORMAT(( i2,i3.3, xf7.3,xf8.3, xi6, xi3,xi5,xi5,xi5, xf5.1,xf5.1, &
+                    2(xi6), xi6, 3(xf6.1), 8(xi6), 7(xf6.1), 8(xi6), 6(xf6.1) ))
 
       ELSEIF( RECNAME(el)=='TEMPMAKT' ) THEN
         ! WRITE(ounit,'(100(a,"    "))') df(el,t)%header(2:96)
@@ -467,7 +472,7 @@ PROGRAM ReadBASE
                      (trim(df(el,t)%header(i)),i=11,90),  &
                      (trim(df(el,t)%header(i)),i=96,142)
         WRITE(ounit, 2003 ) &
-             (( INT(var(el,t)%p2(1,j)), INT(var(el,t)%p2(2,j)),                &
+             (( INT(var(el,t)%p2(1,j)), INT(var(el,t)%p2(2,j)),              &
                 INT(var(el,t)%p2(3,j)),    &
                 INT(var(el,t)%p2(4,j)), (var(el,t)%p2(5:6,j)),              &
                 INT(var(el,t)%p2(7:8,j)),        &  ! var(el,t)%p2(9:10,j), - reserved fields
@@ -780,21 +785,18 @@ INCLUDE "init_BUFR.f90"
 !SUBROUTINE read_arguments()
 !ENDSUBROUTINE read_arguments
 
-SUBROUTINE HANDLE_ERROR(ierr,errmess,act)
-  INTEGER, INTENT(IN)          :: ierr
-  CHARACTER(LEN=*), INTENT(IN) :: errmess, act
-
-  IF( ierr==0 ) RETURN
-
-  SELECT CASE( trim(act) )
-  CASE('attention','message')
-    WRITE(*,*) errmess, ierr
-  CASE('stop')
-    WRITE(*,*) errmess, ierr
-    STOP
-  ENDSELECT
-
-ENDSUBROUTINE HANDLE_ERROR
+! SUBROUTINE HANDLE_ERROR(ierr,errmess,act)
+  ! INTEGER, INTENT(IN)          :: ierr
+  ! CHARACTER(LEN=*), INTENT(IN) :: errmess, act
+  ! IF( ierr==0 ) RETURN
+  ! SELECT CASE( trim(act) )
+  ! CASE('attention','message')
+    ! WRITE(*,*) errmess, ierr
+  ! CASE('stop')
+    ! WRITE(*,*) errmess, ierr
+    ! STOP
+  ! ENDSELECT
+! ENDSUBROUTINE HANDLE_ERROR
 
 ENDPROGRAM ReadBASE
 !==================================================================================================================
