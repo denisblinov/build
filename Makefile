@@ -32,18 +32,18 @@ MYLIB = /RHM-GPFS/users/cosmo/dblinov/software/include/fortran
 FC = ifort
 LD = ifort -static
 
-#COMFLG1=-O2 -fast -parallel -fpp $(PRAGMA)
-COMFLG1=-O0 -fpp  $(PRAGMA)
+COMFLG1=-O2 -fast -parallel -fpp $(PRAGMA)
+#COMFLG1=-O0 -fpp  $(PRAGMA)
 #COMFLG1= -g -O0 -fpp $(PRAGMA)
 #------------------------------------------------------------------------------
 
-INCL = -I$(NETCDF_DIR)/include -I$(MYLIB) -I. 
+INCL = -I$(NETCDF_DIR)/include -I$(MYLIB) -I.
 #------------------------------------------------------------------------------
 
-PROGRAM = remDB
+PROGRAM = remdb2data
 
-remDB_$(CPU):  module_main.f90                          \
-		module_bufr.o module_netCDF.o 
+remdb2data_$(CPU):  module_main.f90                          \
+		module_bufr.o module_netCDF.o
 		echo ' making remdb_$(CPU).exe'
 		$(FC) $(COMFLG1) -c module_main.f90
 		echo ' compile mod_main'

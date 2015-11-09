@@ -495,7 +495,8 @@ SUBROUTINE remove_voidSt()
     jj=0
     DO j=1,NY
       IF ( value_field(2,j,t) /= iundef .and. &
-           value_field(1,j,t) /= 22222        ) THEN
+           value_field(1,j,t) /= 22222  .and. &
+           value_field(1,j,t) /= iundef       ) THEN
         jj=jj+1
         value_field3(:,jj,t) = value_field2(:,j,t)
       ENDIF

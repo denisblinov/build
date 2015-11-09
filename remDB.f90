@@ -13,7 +13,7 @@
 !
 ! TODO:
 ! - Внедрить подпрорамму проверки ошибок/аварийного завершения HANDLE_ERROR
-! - format printing and OUT message 
+! - format printing and OUT message as manual 
 ! - optimize section OUTPUT
 ! - describe DefGrid
 ! - add print legend of variables for maket and csv: long name and unit
@@ -21,7 +21,6 @@
 ! - good format output for TEMPXXXX 
 ! - check field at surface, tropopause, vmax etc in TEMPMAKT
 ! - right format for csv-output
-! - filter for COSMO-ENA13: add rotate convertion
 
 PROGRAM ReadBASE     
   USE  RemDB
@@ -459,7 +458,8 @@ PROGRAM ReadBASE
            (var(el,t)%p2(26:32,j)),     &
            INT(var(el,t)%p2(33:40,j)),  &
            (var(el,t)%p2(41:46,j)) ), j=1,NY )
-        !WRITE(ounit,'(i2)') ( (int(var(el,t)%p2(1,j))),j=1,NY)
+
+        IF(LP>3) WRITE(*,*) NY,'last point:', var(el,t)%p2(:,NY)
 
       2210 FORMAT(( a5,a8,a9,a7,a4,3a6,2a6,35(x,a6) ))
       2211 FORMAT(( i2,i3.3, xf7.3,xf8.3, xi6, xi3,xi5,xi5,xi5, xf5.1,xf5.1, &
@@ -784,19 +784,6 @@ INCLUDE "init_BUFR.f90"
 
 !SUBROUTINE read_arguments()
 !ENDSUBROUTINE read_arguments
-
-! SUBROUTINE HANDLE_ERROR(ierr,errmess,act)
-  ! INTEGER, INTENT(IN)          :: ierr
-  ! CHARACTER(LEN=*), INTENT(IN) :: errmess, act
-  ! IF( ierr==0 ) RETURN
-  ! SELECT CASE( trim(act) )
-  ! CASE('attention','message')
-    ! WRITE(*,*) errmess, ierr
-  ! CASE('stop')
-    ! WRITE(*,*) errmess, ierr
-    ! STOP
-  ! ENDSELECT
-! ENDSUBROUTINE HANDLE_ERROR
 
 ENDPROGRAM ReadBASE
 !==================================================================================================================
