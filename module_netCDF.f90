@@ -31,9 +31,9 @@ MODULE routine4netCDF
     character (len = 50) :: name
     integer(kind = 4)    :: id        ! id variable
     character (len = 20) :: units
-    integer(kind = 4)    :: iFillValue=-999999
-    real(kind = 4)       :: fFillValue=-999999.0
-    character(len = 9)   :: cFillValue="."
+    integer(kind = 4)    :: iFillValue = -999999
+    real(kind = 4)       :: fFillValue = -999999.0
+    character(len = 9)   :: cFillValue = "."
     integer(kind = 4)    :: nDims=0  ! number of dimentions
   endtype descrVAR
 

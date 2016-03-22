@@ -12,6 +12,8 @@
 ! - library bufr(optional) for writing data in bufr-format
 !
 ! TODO:
+! ¬ remdb не записывать данные с плохими координатами -9999.99 (дл€ sfo01) и отсутсвующими данными дл€ усвоени€
+! - filterArea = cm_ena for AIREP, TEMP, ...
 ! - ¬недрить подпрорамму проверки ошибок/аварийного завершени€ HANDLE_ERROR
 ! - format printing and OUT message as manual 
 ! - optimize section OUTPUT
@@ -33,12 +35,12 @@ PROGRAM ReadBASE
   CHARACTER*4  nameBASE           ! name base
   INTEGER*4    codeOPEN/560701/, &    ! code access for OPEN base(one for one user/host)   
                codeBASE               ! code(number) base /420511/
-  LOGICAL   :: statBASE=.false. , cycleBASE=.true.
+  LOGICAL   :: statBASE = .FALSE. !, cycleBASE = .TRUE.
 !------------------------------------------------------------------------
 !>>------------  ѕеременные дл€ типа запроса ----------------------------
   LOGICAL      infoGrid/0/, infoListFields/0/, infoRecord/0/
   LOGICAL      readFIELD/1/, readFIELD2/0/, rMaket/0/
-  INTEGER*4    typeREQUEST
+  ! INTEGER*4    typeREQUEST
 !<<----------------------------------------------------------------------
 !--------------  ѕеременные дл€ сетки и размерностей --------------------
   INTEGER, PARAMETER ::   NELmax=200       ! максимальное количество 2-мерных полей
@@ -56,12 +58,13 @@ PROGRAM ReadBASE
 !--------------  ѕеременные дл€ вывода / печати --------------------
   CHARACTER*20  &
     typefile,   &  ! { text maket csv list_station netCDF4COSMO bufr4versus stGrads binary binary4GRADS }
-    filterArea, filterObs, strDATE
+    filterArea, filterObs
   CHARACTER*10   char10, typeINPUT
   CHARACTER(LEN=40000) ListName
-  CHARACTER*30  ::  FileName = 'fields.dat' , fmOU= '(g)', oFileName='fields.dat'
-  CHARACTER*256 ::  oDirName ='./', inFile
-  LOGICAL::      appendfile=.false.
+  CHARACTER*30  ::  FileName = 'fields.dat', fmOU= '(g)', oFileName='fields.dat'
+  CHARACTER*256 ::  oDirName = './', inFile
+  LOGICAL       ::  appendfile = .FALSE.
+  REAL, DIMENSION(4)   ::  filterCoord
 
 !------------------------------------------------------------------------
 
@@ -82,7 +85,8 @@ PROGRAM ReadBASE
 
   REAL*4, ALLOCATABLE ::  value_field(:,:,:)
   REAL*8, ALLOCATABLE ::  value_field2(:,:,:), value_field3(:,:,:)
-  CHARACTER*3  termForecast
+  CHARACTER*3  :: termForecast
+  CHARACTER*20 :: strDATE
 !!CHARACTER(LEN=500) :: HEADSYNOP
 
 !-<<-------------------------------------------------------------------<<-
@@ -93,7 +97,7 @@ PROGRAM ReadBASE
   NAMELIST /FIELD/   listfields, DATEHH, date_end,                            &
                      HFstep, startTerm, endTerm
   NAMELIST /OUTPUT/  typefile, FileName, oDirName, fmOU, appendfile,          &
-                     listPoints, filterArea
+                     listPoints, filterArea, filterCoord
 
 !------------------------------------------------------------------
 
@@ -109,15 +113,16 @@ PROGRAM ReadBASE
 
 !-----------------------------
 !     initial default value
-  DATEHH(:)=oundef
-  listPoints=iundef
-  listfields(:)='--------'
+  DATEHH(:)     = oundef
+  listPoints    = iundef
+  listfields(:) = '--------'
+  filterCoord(:)= 0.0
 !-----------------------------
 
   CALL GETARG(1,typeINPUT)
   CALL GETARG(2,inFile)
 
-  IF (trim(typeINPUT)=='tty') THEN
+  IF (TRIM(typeINPUT)=='tty') THEN
     iunit=5
     WRITE(*,*) ' input variable from namelist &BASE'
     READ(iunit,base)
@@ -155,30 +160,32 @@ PROGRAM ReadBASE
 
   IF ( startTerm>endTerm )  endTerm=startTerm
 
-  NT =COUNT( DATEHH > 1900010100, DIM=1 ) 
+  NT = COUNT( DATEHH > 1900010100, DIM=1 ) 
   SELECT CASE (listfields(1))
   CASE( 'SYNOPMAK', 'SYNOPDOP','SHIPBMAK', 'TEMPMAKT', 'TEBDTMAK', 'TEBDWMAK', 'AIREPMAK' )
-    hstep=6
+    hstep = 6
   CASE( 'TEMPALLC' )
-    hstep=12
+    hstep = 12
+  CASE( 'APXITPS8' )
+    hstep = 24
   CASE DEFAULT
-    hstep=6
+    hstep = 6
   ENDSELECT
 
   DO WHILE( date_end > DATEHH(nt))
-    DATEHH(nt+1)=newDATE(DATEHH(nt),hstep)
-    nt=nt+1
+    DATEHH(nt+1) = newDATE(DATEHH(nt),hstep)
+    nt = nt + 1
     IF(LP>4) WRITE(*,*) 'new date =', DATEHH(nt),' (', DATEHH(nt-1),' )'
   ENDDO
 
-  NEL0=count( listfields(:)/='--------' , DIM=1 )
+  NEL0 = COUNT( listfields(:) /= '--------', DIM=1 )
   
   ! set undef value for typefile
-  SELECT CASE (trim(typefile))
+  SELECT CASE (TRIM(typefile))
   CASE( 'bufr4versus' )
-    oundef=1.7D38
+    oundef = 1.7D38
   CASE( 'binary4GRADS' )
-    oundef=-9999.
+    oundef = -9999.
   ENDSELECT
   
   IF(LP>4) WRITE(*,*) HUGE(oundef),MAXEXPONENT(oundef),RADIX(oundef)
@@ -211,13 +218,11 @@ PROGRAM ReadBASE
 
 !--------------------------------------------
 
-  IF( statBASE ) cycleBASE=.false.
-
-  Date(1:NT)=DATEHH(1:NT)/100          ! YMD422с  YYYYMMDD  Y4M2D2_c
-  year(1:NT)=Date(1:NT)/10000          ! YYYYc  cYYYY  iYYYY year
-  month=mod(Date(1:NT), 10000)/100     ! month iMM
-  Day(1:NT)=mod(Date(1:NT), 100)       ! Day DD iDD
-  hour(1:NT)=mod(DATEHH(1:NT), 100)    ! iHH hour
+  Date(1:NT) = DATEHH(1:NT)/100           ! YMD422с  YYYYMMDD  Y4M2D2_c
+  year(1:NT) = Date(1:NT)/10000           ! YYYYc  cYYYY  iYYYY year
+  month      = mod(Date(1:NT), 10000)/100 ! month iMM
+  Day(1:NT)  = mod(Date(1:NT), 100)       ! Day DD iDD
+  hour(1:NT) = mod(DATEHH(1:NT), 100)     ! iHH hour
 
   ALLOCATE( df(1:nel,1:NT), var(1:nel,1:NT) )
 
@@ -230,11 +235,11 @@ PROGRAM ReadBASE
     CALL OPENb(codeOPEN, nameBASE, 1_4, codeRETURN)
   ELSE
     CALL OPENRemHost(HOST, codeRETURN)
-    CALL HANDLE_ERROR(codeRETURN,' Error OPENing Host ','STOP')
+    CALL HANDLE_ERROR(codeRETURN,' Error OPENing Host ','stop')
 
     CALL OPENRemDB(codeOPEN, nameBASE, 1_4, codeRETURN)
   ENDIF
-  CALL HANDLE_ERROR(codeRETURN,' Error OPENing data Bases ','STOP')
+  CALL HANDLE_ERROR(codeRETURN,' Error OPENing data Bases ','stop')
 
 !==========================================================================
 !              GETTING info about grid, record, listfields
@@ -253,16 +258,16 @@ PROGRAM ReadBASE
     df(el,:)%RECNAME = RECNAME(el)
 
     !    ----------infoGrid---------------
-    IF (infoGrid .and. cycleBASE )  THEN
+    IF (infoGrid .AND. .NOT. statBASE )  THEN
       CALL GetcGrRemDB(nameBASE, codeBASE, RECNAME(el), DefGrid, codeRETURN)
-    ELSEIF (infoGrid .and.  statBASE ) THEN
+    ELSEIF (infoGrid .AND.  statBASE ) THEN
       CALL GetqGrRemDB(nameBASE, codeBASE, RECNAME(el), DefGrid, codeRETURN)
     ENDIF
     IF (infoGrid) CALL array_def(DefGrid )
 
     !    ----------infoRecord---------------
-    !if (infoRecord .and. .NOT. statBASE )THEN 
-    IF ( cycleBASE )  CALL GetcRemDB(nameBASE, codeBASE, RECNAME(el), DefRec, codeRETURN)
+    !if (infoRecord .AND. .NOT. statBASE )THEN 
+    IF( .NOT. statBASE )  CALL GetcRemDB(nameBASE, codeBASE, RECNAME(el), DefRec, codeRETURN)
     !ELSEIF (infoRecord .and. .NOT. statBASE )THEN
     !IF (LP > 5 )  WRITE (6,*) 'attempt read info from statBASE base'
     IF ( statBASE )  CALL GetqRemDB(nameBASE, codeBASE, RECNAME(el), DefRec, codeRETURN)
@@ -271,7 +276,7 @@ PROGRAM ReadBASE
     !WRITE (6,'(60i8)') DefRec(1:60)
 
     df(el,:)%NX = DefRec(17)
-    IF(     cycleBASE )THEN
+    IF( .NOT. statBASE )THEN
         df(el,:)%NY = DefRec(18)
     ELSEIF ( statBASE )THEN
         df(el,:)%NY = DefRec(36)
@@ -332,10 +337,10 @@ PROGRAM ReadBASE
       !                      READING SYNOP-DATA
       !                    --------------------------
 
-      IF( rMaket .and. cycleBASE ) THEN
+      IF( rMaket .AND. .NOT. statBASE ) THEN
         CALL ReadMaket(nameBASE, codeBASE, Date(t), RECNAME(el), hour(t), NumbSt, ListSt, iArray, codeRETURN)
         !CALL ReadSynop(nameBASE, codeBASE, Date(t), RECNAME(el), hour, NumbSt, ListSt, iArray, codeRETURN)
-      ELSEIF( rMaket .and. statBASE ) THEN
+      ELSEIF( rMaket .AND. statBASE ) THEN
         CALL ReadMaketRows(nameBASE, codeBASE, RECNAME(el), year(t), month(t), Day(t), hour(t), minute(t), NumbSt, ListSt, iArray,  codeRETURN)
         !CALL RdSynopRows(nameBASE, codeBASE, RECNAME(el), Year, Month, Day, hour, minute, NumbSt, ListSt, iArray,  codeRETURN)
       ENDIF
@@ -347,13 +352,13 @@ PROGRAM ReadBASE
       IF( HOST=='local' )THEN
         CALL rdfc(nameBASE, codeBASE, Date(t), RECNAME(el), hour(t), value_field(1:NX,1:NY,t), codeRETURN)
       ELSE
-        IF     (readFIELD .and. cycleBASE)  THEN
+        IF     (readFIELD .AND. .NOT. statBASE )  THEN
           CALL rdfcRemDB(nameBASE, codeBASE, Date(t), RECNAME(el), hour(t), value_field(1:NX,1:NY,t), codeRETURN)
-        ELSEIF (readFIELD2 .and. statBASE)  THEN
+        ELSEIF (readFIELD2 .AND. statBASE)  THEN
           CALL rdfqRemDB(nameBASE, codeBASE, Date(t), RECNAME(el), hour(t), value_field(1:NX,1:NY,t), codeRETURN)
-        ELSEIF (readFIELD2 .and. cycleBASE) THEN
+        ELSEIF (readFIELD2 .AND. .NOT. statBASE ) THEN
           CALL RdfcrRemDB(nameBASE, codeBASE, RECNAME(el), year(t), month(t), Day(t), hour(t), minute(t), value_field(1:NX,1:NY,t), codeRETURN)
-        ELSEIF (readFIELD .and. statBASE) THEN
+        ELSEIF (readFIELD .AND. statBASE) THEN
           CALL RdfqrRemDB(nameBASE, codeBASE, RECNAME(el), year(t), month(t), Day(t), hour(t), minute(t), value_field(1:NX,1:NY,t), codeRETURN)
         ENDIF
       ENDIF
@@ -407,7 +412,7 @@ PROGRAM ReadBASE
     IF( RECNAME(el)=='SYNOPDOP' ) RECNAME(el) = 'SYNOPMAK'
   ENDDO
 
-  SELECT CASE (trim(typefile))
+  SELECT CASE (TRIM(typefile))
   CASE( 'text' )  ! TERMINAL  and  TEXT   ! simple text field
     DO t=1,NT; DO el=1,NEL
 
@@ -423,7 +428,7 @@ PROGRAM ReadBASE
         oNYend=df(el,t)%NY
       ENDIF
 
-      OPEN (ounit,file=trim(filename), position='append')
+      OPEN (ounit,file=TRIM(filename), position='append')
       WRITE(ounit,*) 'DATE=',Date(t), hour(t), 'zab=',startTerm,'format=',fmOU
 
       WRITE(ounit,'(10E15.6)') (( var(el,t)%p2(i,j),i=oNXstart,oNXend),      &
@@ -436,14 +441,15 @@ PROGRAM ReadBASE
 
     DO t=1,NT; DO el=1,NEL
       NY = df(el,t)%NY
+      IF( NY == 0 ) CYCLE
 
       IF (FileName=='DATE_RECNAME')THEN
         oFileName = df(el,t)%charDATEHH//'_'//RECNAME(el)
       ENDIF
-      OPEN (ounit,file=trim(ofilename), position='append')
+      OPEN (ounit,file=TRIM(ofilename), position='append')
       !WRITE(ounit,*) 'DATE=',Date(t), hour(t), 'zab=',startTerm;
 
-      IF (RECNAME(el)=='SYNOPDOP' .or. RECNAME(el)=='SYNOPMAK') THEN
+      IF (RECNAME(el)=='SYNOPDOP' .OR. RECNAME(el)=='SYNOPMAK') THEN
        !WRITE(ounit,'(45(a,"    "))') (trim(df(el,t)%header(i)),i=2,45)
         WRITE(ounit,2210) (trim(df(el,t)%header(i)),i=2,46)
         WRITE(ounit,2211)               ( &
@@ -477,7 +483,9 @@ PROGRAM ReadBASE
                 INT(var(el,t)%p2(4,j)), (var(el,t)%p2(5:6,j)),              &
                 INT(var(el,t)%p2(7:8,j)),        &  ! var(el,t)%p2(9:10,j), - reserved fields
                 ! var(el,t)%p2(11:90,j),           &
-                ((INT(var(el,t)%p2(jj,j)),(var(el,t)%p2(jj+1,j)),(var(el,t)%p2(jj+2,j)),INT(var(el,t)%p2(jj+3,j)),INT(var(el,t)%p2(jj+4,j)) ),jj=11,90,5),           &
+                ( (INT(var(el,t)%p2(jj,j)), var(el,t)%p2(jj+1,j),   &
+                  var(el,t)%p2(jj+2,j), INT(var(el,t)%p2(jj+3,j)),  &
+                  INT(var(el,t)%p2(jj+4,j)) ),jj=11,90,5),          &
                 var(el,t)%p2(96:100,j),          &
                 (var(el,t)%p2(101:142,j)),       &  ! var(el,t)%p2(143:146,j), - reserved fields
                 INT((var(el,t)%p2(147:150,j))),  &
@@ -511,10 +519,10 @@ PROGRAM ReadBASE
       ELSEIF( RECNAME(el)=='AIREPMAK' ) THEN
         WRITE(ounit,'(12(a,"  "))') df(el,t)%header(2), df(el,t)%header(4:13),  df(el,t)%header(17)
         WRITE(ounit,'(i6, i3, 2f10.2, 2i6.4, 4i8, f10.2, " ",4a2)')   &
-          (( int(var(el,t)%p2(2,j)), int(var(el,t)%p2(4,j)),          &
-             var(el,t)%p2(5:6,j),    int(var(el,t)%p2(7:8,j)),        &
-             int(var(el,t)%p2(9:12,j)),   var(el,t)%p2(13,j),         &
-             int(var(el,t)%p2(17:20,j)) ),j=1,NY )  
+          (( INT(var(el,t)%p2(2,j)), INT(var(el,t)%p2(4,j)),          &
+             var(el,t)%p2(5:6,j),    INT(var(el,t)%p2(7:8,j)),        &
+             INT(var(el,t)%p2(9:12,j)),   var(el,t)%p2(13,j),         &
+             INT(var(el,t)%p2(17:20,j)) ),j=1,NY )  
 
       ELSEIF (RECNAME(el)=='SHIPBMAK') THEN
         WRITE(ounit,'(27(a,"    "))')  df(el,t)%header(2:5), df(el,t)%header(9:26), df(el,t)%header(42:46)
@@ -524,6 +532,30 @@ PROGRAM ReadBASE
            var(el,t)%p2(9:11,j), int(var(el,t)%p2(12:25,j)), &
            var(el,t)%p2(26,j), (var(el,t)%p2(42:45,j)),      &
            int(var(el,t)%p2(46,j)) ) ,j=1,NY )
+
+      ELSEIF( RECNAME(el)=='APXITPS8' )THEN
+        ! WRITE(ounit,'(35(a,"    "))')  df(el,t)%header(2:5), df(el,t)%header(9:26), df(el,t)%header(42:46)
+
+        WRITE(ounit,2310) (TRIM(df(el,t)%header(i)),i=2,36)
+        WRITE(ounit,2311)               (                   &
+         ( INT(var(el,t)%p2(1,j)), INT(var(el,t)%p2(2,j)),  & ! index
+              (var(el,t)%p2( 3: 4,j)),          & ! lon,lat
+              (var(el,t)%p2( 5:12,j)),          & ! t_2m
+           INT(var(el,t)%p2(13:15,j)),          &
+              (var(el,t)%p2(   16,j)),          & ! avePS
+           INT(var(el,t)%p2(17,j)/10),          & ! maxWind
+           MOD(INT(var(el,t)%p2(17,j)),10)*3-3, & ! hour of maxWind
+           INT(var(el,t)%p2(18:29,j)),          &
+              (var(el,t)%p2(30:31,j)),          &
+           INT(var(el,t)%p2(32:36,j)) ), j=1,NY )
+
+        ! IF(LP>3) WRITE(*,*) NY,'last point:', var(el,t)%p2(:,NY)
+
+      2310 FORMAT(( a5, a8,a9, 32(x,a6) ))
+      2311 FORMAT(( i2,i3.3, xf7.3,xf8.3, 8(xf6.1), 3(xi6), xf6.1, xi3, xi2, 12(xi6), 2(xf6.1), 5(xi6) ))
+
+      ELSE
+        WRITE(*,*) 'No maket for this RECNAME:', RECNAME(el)
 
       ENDIF
 
@@ -542,16 +574,16 @@ PROGRAM ReadBASE
       WRITE(strDATE,"(i4.4,'-',i2.2,'-',i2.2,x,i2.2,':00')") df(el,t)%year, df(el,t)%month, df(el,t)%day, df(el,t)%hour
 
       j=1;jj=1
-      DO WHILE ( listPoints(jj)>iundef .and. j<=NY  )
-        IF (LP > 5 ) WRITE (*,*) 'seach stantion',jj,j, listPoints(jj)
-        IF(  int(var(el,t)%p2(1,j)*1000+var(el,t)%p2(2,j),4)==int(listPoints(jj),4)  )THEN
-          IF (LP > 5 ) WRITE (*,*) 'FIND stantion !!!',jj,j
+      DO WHILE ( listPoints(jj)>iundef .AND. j<=NY  )
+        IF (LP > 5 ) WRITE (*,*) 'seach station',jj,j, listPoints(jj)
+        IF(  int(var(el,t)%p2(1,j)*1000+var(el,t)%p2(2,j),4)==INT(listPoints(jj),4)  )THEN
+          IF (LP > 5 ) WRITE (*,*) 'FIND station !!!',jj,j
           IF (FileName=='ID')  WRITE(oFileName,'(i5.5)') listPoints(jj)
-          OPEN (ounit,file=trim(ofilename)//'.csv', position='append')
+          OPEN (ounit,file=TRIM(ofilename)//'.csv', position='append')
 
           SELECT CASE( df(el,t)%RECNAME )
           CASE( 'SYNOPMAK', 'SYNOPDOP' )
-            IF(t==1 .and. el==1) WRITE(ounit,'(a16,45(a,";"))')'DATE;', df(el,t)%header(2:46)
+            IF(t==1 .AND. el==1) WRITE(ounit,'(a16,45(a,";"))')'DATE;', df(el,t)%header(2:46)
             WRITE(ounit,6401)  &
               strDATE, int(var(el,t)%p2(1,j)), int(var(el,t)%p2(2,j)), &
               var(el,t)%p2(3:4,j), ( int(var(el,t)%p2(i,j)) ,i=5,7),   &

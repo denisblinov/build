@@ -634,11 +634,11 @@ SUBROUTINE INIT_meteo_fields(i1,ni,Observation)
 
 ! precipitation
   IF( df(el,t)%RECNAME=='SYNOPMAK' .or. df(el,t)%RECNAME=='SYNOPDOP' )THEN
-    array_f(13,1,:)=var(el,t)%p2(29,i1:i2)
-    array_f(13,2,:)=var(el,t)%p2(30,i1:i2)
-    array_f(15,1,:)=var(el,t)%p2(31,i1:i2)
-    array_i(33,1,:)= -6     ! MGGTP1
-    array_i(33,2,:)= -12
+    array_f(13,1,:) = var(el,t)%p2(29,i1:i2) ! MRR
+    array_f(13,2,:) = var(el,t)%p2(30,i1:i2) ! MRR
+    array_f(15,1,:) = var(el,t)%p2(31,i1:i2) ! MRR24
+    array_i(33,1,:) = -6     ! MGGTP1
+    array_i(33,2,:) = -12
   ENDIF
 
 ! vertical pressure

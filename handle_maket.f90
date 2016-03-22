@@ -1,24 +1,25 @@
 SUBROUTINE handle()
 ! TODO:
 ! - check coordinate of TEMP station in SLOVPURx - bring double string
-!
+! - check handle 96-142 for TEMPMAKT
   
-  INTEGER*4 mZ, mT, mW  ! number level on surface{0-1}, tropopause {0-6}, windmax {0-6} for TEMPMAKT
-  REAL*4       unitTemp, unitPressure, unitCloud
+  INTEGER :: mZ, mT, mW  ! number level on surface{0-1}, tropopause {0-6}, windmax {0-6} for TEMPMAKT
+  INTEGER :: ilat, ilon
+  REAL*4  :: unitTemp, unitPressure, unitCloud
   LOGICAL, ALLOCATABLE, DIMENSION(:) :: filterSt
   ! LOGICAL, DIMENSION(:) :: filterSt
   ! LOGICAL, DIMENSION(:) :: filterSt
 
 !------------SET units for variable P and T------------------------
-  SELECT CASE( trim(typefile) )
-  CASE('maket','csv','stantion')   !  [C] and [gPa]
+  SELECT CASE( TRIM(typefile) )
+  CASE('maket','csv','station')   !  [C] and [gPa]
     unitTemp     = 0.0
     unitPressure = 0.1
   CASE DEFAULT                     !  [K] and [Pa]
     unitTemp     = 273.15
     unitPressure = 10.0
   ENDSELECT
-  unitCloud=10    ! [%]
+  unitCloud = 10    ! [%]
 !------------------------------------------------------------------
 
   set_id: SELECT CASE ( RECNAME(el) )
@@ -36,6 +37,7 @@ SUBROUTINE handle()
 
   handle_maket: SELECT CASE( RECNAME(el) )
   CASE( 'SYNOPMAK','SYNOPDOP')
+    ilat = 3;    ilon = 4
     FORALL( j=1:NY )
      !value_field2(1:2,j,t)=value_field(1:2,j,t)                          ! index
       value_field2(3:4,j,t)=value_field(3:4,j,t)*0.01                     ! lat, lon [degree]
@@ -133,6 +135,7 @@ SUBROUTINE handle()
       df(el,:)%header(46) = 'tmsl'
 
     CASE( 'TEMPMAKT' ) handle_maket
+      ilat = 5;    ilon = 6
       FORALL( j=1:NY )
        !value_field2(1:4,j,t)=value_field(1:4,j,t)                    ! indexRegion, indexSt
        !value_field2(3,j,t)=value_field(3,j,t)                        ! marker: 2(TEMP, TEMP-SHIP) or 8(PILOT)
@@ -140,8 +143,8 @@ SUBROUTINE handle()
         value_field2(5:6,j,t)=value_field(5:6,j,t)*0.01               ! lat, lon
        !value_field2(7:10,j,el,t)=value_field(7:10,j,t)               ! hour, day, reserv1, reserv2
         value_field2(11,j,t)=value_field(11,j,t)-1000                 ! H1000
-        value_field2(12,j,t)=(value_field(12,j,t)-1000.)*0.1+unitTemp ! T on 1000gPa
-        value_field2(13,j,t)=value_field(13,j,t)*0.1                  ! Td (rcld-saturation deficit) on level 1000gPa
+       !value_field2(12,j,t)=(value_field(12,j,t)-1000.)*0.1+unitTemp ! T on 1000gPa
+       !value_field2(13,j,t)=value_field(13,j,t)*0.1                  ! Td (rcld-saturation deficit) on level 1000gPa
        !value_field2(14,j,t)=value_field(14,j,t)                      ! direct of wind on level [degree]
        !value_field2(15,j,t)=value_field(15,j,t)                      ! speed of wind on level [m/s]
        !value_field2(101:124,j,t)=value_field(101:124,j,t)            ! data on level tropopause P t ff ddd
@@ -157,7 +160,7 @@ SUBROUTINE handle()
         !value_field2(i+4,j,t)=value_field(i+4,j,t)                     ! speed  of wind on level [m/s]
       END FORALL
 
-      value_field2(96:142,:,t)=oundef
+      value_field2(96:142,:,t) = oundef ! need change
 
       DO j=1,NY
         mz = value_field(93,j,t) ! 0 or 1
@@ -256,6 +259,7 @@ SUBROUTINE handle()
 !     string Type(Sr) RaRaSaSa OSurf OTropop OmaxW" 
 
     CASE( 'TEBDTMAK' ) handle_maket
+      ilat = 5;    ilon = 6
       FORALL( j=1:NY )
         !value_field2(1:2,j,t)=value_field(1:2,j,t)                  ! indexRegion, indexSt
         !value_field2(3,j,t)=value_field(3,j,t)                      ! marker observation (6)
@@ -271,6 +275,7 @@ SUBROUTINE handle()
       END FORALL
 
     CASE( 'TEBDWMAK' ) handle_maket
+      ilat = 5;    ilon = 6
       FORALL( j=1:NY )
         !value_field2(1:2,j,t)=value_field(1:2,j,t)                  ! indexRegion, indexSt
         !value_field2(3,j,t)=value_field(3,j,t)                      ! marker observation (7)
@@ -284,16 +289,17 @@ SUBROUTINE handle()
         !value_field2(i+1,j,t) = value_field(i+1,j,t)                ! wind direction
         !value_field2(i+2,j,t) = value_field(i+2,j,t)                ! wind speed
       ENDFORALL
-      
+
     CASE( 'TEMPALLC' ) handle_maket
+      ilat = 6;    ilon = 7
       FORALL( j=1:NY )
-        value_field2(3,j,t) = value_field(1,j,t)                     ! marker start
-        value_field2(1:2,j,t)=value_field(2:3,j,t)                   ! indexRegion, indexSt
-        value_field2(2,j,t)=value_field(3,j,t)                       ! indexSt
-       !value_field2(4,j,t)=value_field(4,j,t)                       ! marker observation (7)
-       !value_field2(5,j,t)=value_field(5,j,t)                       ! altitude
-        value_field2(6:7,j,t)=value_field(6:7,j,t)*0.01              ! lat, lon
-       !value_field2(11,j,t)=value_field(11,j,t)                     ! nlevels
+        value_field2(3,j,t)   = value_field(1,j,t)                     ! marker start
+        value_field2(1:2,j,t) = value_field(2:3,j,t)                   ! indexRegion, indexSt
+        value_field2(2,j,t)   = value_field(3,j,t)                     ! indexSt
+       !value_field2(4,j,t)   = value_field(4,j,t)                     ! marker observation (7)
+       !value_field2(5,j,t)   = value_field(5,j,t)                     ! altitude
+        value_field2(6:7,j,t) = value_field(6:7,j,t)*0.01              ! lat, lon
+       !value_field2(11,j,t)  = value_field(11,j,t)                    ! nlevels
       ENDFORALL
 
       FORALL( j=1:NY, i=15:2600:13 )
@@ -306,76 +312,77 @@ SUBROUTINE handle()
       ENDFORALL
       
   CASE( 'SHIPBMAK' )
-
+    ilat = 3;    ilon = 4
     FORALL( j=1:NY )
-     !value_field2(1:2,j,t)=value_field(1:2,j,t)                          ! 99, number report
-      value_field2(3:4,j,t)=value_field(3:4,j,t)*0.01                     ! lat, lon [degree]
-     !value_field2(5:8,j,el,t)=value_field(5:8,j,t)                       ! name of ship or number buoy
-      value_field2(9,j,t)=value_field(9,j,t)*unitPressure                 ! pmsl
-      value_field2(10:11,j,t)=(value_field(10:11,j,t)-1000)*0.1+unitTemp  ! t_2m, td_2m
-     !value_field2(12:14,j,t)=value_field(12:14,j,t)                      ! direct, speed, kind baric tendency
-      value_field2(15,j,t)=(value_field(15,j,t)-1000)*unitPressure        ! pressure tendency [Pa/3hour]
-      value_field2(16,j,t)=value_field(16,j,t)*10                         ! horisontal visiable [m]
-      value_field2(17,j,t)=value_field(17,j,t)*0.1                        ! sunlight [hour]
-      value_field2(18:19,j,t)=value_field(18:19,j,t)*unitCloud            ! total cloud in [ball->%], Hh[ball->%]
-     !value_field2(20:23,j,t)=value_field(20:23,j,t)                      ! Cl[code], Cm[code], Ch[code], HBASE_CL [m]
-     !value_field2(24:25,j,t)=value_field(24:25,j,t)                      ! ww (current weather)[code 4677], ww1(past weather)[code 4561]
-      value_field2(26,j,t)=(value_field(26,j,t)-1000)*0.1+unitTemp        ! t_surface_water
-     !value_field2(27:41,j,t)=value_field(27:41,j,t)                      ! reserv
-      value_field2(42:43,j,t)=value_field(42:43,j,t)*unitPressure         ! PHCorrect, PExetter
-      value_field2(44:45,j,t)=value_field(44:45,j,t)*0.1+unitTemp         ! THCorrect, TPExetter
-     !value_field2(46,j,t)=value_field(46,j,t)                            ! marker: 21 - SHIP, 152 - BUOY
+     !value_field2(1:2,j,t)   = value_field(1:2,j,t)                        ! 99, number report
+      value_field2(3:4,j,t)   = value_field(3:4,j,t)*0.01                   ! lat, lon [degree]
+     !value_field2(5:8,j,t)   = value_field(5:8,j,t)                        ! name of ship or number buoy
+      value_field2(9,j,t)     = value_field(9,j,t)*unitPressure             ! pmsl
+      value_field2(10:11,j,t) = (value_field(10:11,j,t)-1000)*0.1+unitTemp  ! t_2m, td_2m
+     !value_field2(12:14,j,t) = value_field(12:14,j,t)                      ! direct, speed, kind baric tendency
+      value_field2(15,j,t)    = (value_field(15,j,t)-1000)*unitPressure     ! pressure tendency [Pa/3hour]
+      value_field2(16,j,t)    = value_field(16,j,t)*10                      ! horisontal visiable [m]
+      value_field2(17,j,t)    = value_field(17,j,t)*0.1                     ! sunlight [hour]
+      value_field2(18:19,j,t) = value_field(18:19,j,t)*unitCloud            ! total cloud in [ball->%], Hh[ball->%]
+     !value_field2(20:23,j,t) = value_field(20:23,j,t)                      ! Cl[code], Cm[code], Ch[code], HBASE_CL [m]
+     !value_field2(24:25,j,t) = value_field(24:25,j,t)                      ! ww (current weather)[code 4677], ww1(past weather)[code 4561]
+      value_field2(26,j,t)    = (value_field(26,j,t)-1000)*0.1+unitTemp     ! t_surface_water
+     !value_field2(27:41,j,t) = value_field(27:41,j,t)                      ! reserv
+      value_field2(42:43,j,t) = value_field(42:43,j,t)*unitPressure         ! PHCorrect, PExetter
+      value_field2(44:45,j,t) = value_field(44:45,j,t)*0.1+unitTemp         ! THCorrect, TPExetter
+     !value_field2(46,j,t)    = value_field(46,j,t)                         ! marker: 21 - SHIP, 152 - BUOY
     END FORALL
 
     ! отрицательные значени€ - это забракованные данные задачей OASYN
-    WHERE (  value_field(8:13,:,t)  < 0  )  value_field2(8:13,:,t) =oundef
-    ! ¬ базе встречаютс€ значени€ облачности, равное 99 
+    WHERE( value_field(8:13,:,t) < 0 )  value_field2(8:13,:,t) = oundef
+    ! ¬ базе встречаютс€ значени€ облачности, равное 99
     ! приходитс€ еЄ приравнивать к константе отсутстви€.
-    WHERE( value_field(18,:,t) == 99.0 ) value_field2(18,:,t)=oundef
+    WHERE( value_field(18,:,t) == 99.0 ) value_field2(18,:,t) = oundef
     ! «адать знак тенденции согласно  Ќ-01
-    WHERE( value_field(14,:,t) > 4.0 ) value_field2(15,:,t)=-value_field2(15,:,t)
+    WHERE( value_field(14,:,t) > 4.0 ) value_field2(15,:,t) = -value_field2(15,:,t)
 
-    df(el,:)%header(1)='index'
-    df(el,:)%header(2)='number'
-    df(el,:)%header(3)='lat'
-    df(el,:)%header(4)='lon'
-    df(el,:)%header(5)='name'
-    df(el,:)%header(9)='PMSL'
-    df(el,:)%header(10)='t_2m'
-    df(el,:)%header(11)='td_2m'
-    df(el,:)%header(12)='directW'
-    df(el,:)%header(13)='speedW'
-    df(el,:)%header(14)='type_dpst'
-    df(el,:)%header(15)='dpst'
-    df(el,:)%header(16)='hVV'
-    df(el,:)%header(17)='tsunl'
-    df(el,:)%header(18)='clct'
-    df(el,:)%header(19)='clcl/clcm'
-    df(el,:)%header(20)='clcl'
-    df(el,:)%header(21)='clcm'
-    df(el,:)%header(22)='clch'
-    df(el,:)%header(23)='hbas_cl'
-    df(el,:)%header(24)='WW'
-    df(el,:)%header(25)='pWW'
-    df(el,:)%header(26)='t_s'
-    df(el,:)%header(42)='pmsl_hc'
-    df(el,:)%header(43)='pmsl_uk'
-    df(el,:)%header(44)='t2m_hc'
-    df(el,:)%header(45)='t2m_uk'
-    df(el,:)%header(46)='marker'
+    df(el,:)%header(1)  = 'index'
+    df(el,:)%header(2)  = 'number'
+    df(el,:)%header(3)  = 'lat'
+    df(el,:)%header(4)  = 'lon'
+    df(el,:)%header(5)  = 'name'
+    df(el,:)%header(9)  = 'PMSL'
+    df(el,:)%header(10) = 't_2m'
+    df(el,:)%header(11) = 'td_2m'
+    df(el,:)%header(12) = 'directW'
+    df(el,:)%header(13) = 'speedW'
+    df(el,:)%header(14) = 'type_dpst'
+    df(el,:)%header(15) = 'dpst'
+    df(el,:)%header(16) = 'hVV'
+    df(el,:)%header(17) = 'tsunl'
+    df(el,:)%header(18) = 'clct'
+    df(el,:)%header(19) = 'clcl/clcm'
+    df(el,:)%header(20) = 'clcl'
+    df(el,:)%header(21) = 'clcm'
+    df(el,:)%header(22) = 'clch'
+    df(el,:)%header(23) = 'hbas_cl'
+    df(el,:)%header(24) = 'WW'
+    df(el,:)%header(25) = 'pWW'
+    df(el,:)%header(26) = 't_s'
+    df(el,:)%header(42) = 'pmsl_hc'
+    df(el,:)%header(43) = 'pmsl_uk'
+    df(el,:)%header(44) = 't2m_hc'
+    df(el,:)%header(45) = 't2m_uk'
+    df(el,:)%header(46) = 'marker'
 
   CASE( 'AIREPMAK')
+    ilat = 5;    ilon = 6
     FORALL( j=1:NY ) ! 1:20000
-     !value_field2(1:3,j,t)=value_field(1:3,j,t)                          ! 500, number report, 5
-     !value_field2(4,j,t)=value_field(4,j,t)                              ! marker: 43 - AMDAR, 45 - AIREP
-      value_field2(5:6,j,t)=value_field(5:6,j,t)*0.01                     ! lat, lon
-     !value_field2(7:8,j,el,t)=value_field(7:8,j,t)                       ! time in hhmm, day in MMdd
-     !value_field2(9,j,el,t)=value_field(9,j,t)                           ! height of flight [m]
-      value_field2(10,j,t)=value_field(10,j,t)*unitPressure               ! pressure 
-     !value_field2(11:12,j,t)=value_field(11:12,j,t)                      ! direct wind [degree], speed wind [m/s]
-      value_field2(13,j,t)=(value_field(13,j,t)-1000)*0.1+unitTemp        ! temperature
-     !value_field2(14:16,j,t)=value_field(14:16,j,t)                      ! reserv
-     !value_field2(17:20,j,t)=value_field(17:20,j,t)                      ! name of aircraft
+     !value_field2(1:3,j,t)   = value_field(1:3,j,t)                       ! 500, number report, 5
+     !value_field2(4,j,t)     = value_field(4,j,t)                         ! marker: 43 - AMDAR, 45 - AIREP
+      value_field2(5:6,j,t)   = value_field(5:6,j,t)*0.01                  ! lat, lon
+     !value_field2(7:8,j,el,t)= value_field(7:8,j,t)                       ! time in hhmm, day in MMdd
+     !value_field2(9,j,el,t)  = value_field(9,j,t)                         ! height of flight [m]
+      value_field2(10,j,t)    = value_field(10,j,t)*unitPressure           ! pressure 
+     !value_field2(11:12,j,t) = value_field(11:12,j,t)                     ! direct wind [degree], speed wind [m/s]
+      value_field2(13,j,t)    = (value_field(13,j,t)-1000)*0.1+unitTemp    ! temperature
+     !value_field2(14:16,j,t) = value_field(14:16,j,t)                     ! reserv
+     !value_field2(17:20,j,t) = value_field(17:20,j,t)                     ! name of aircraft
 
     END FORALL
     ! отрицательные значени€ - это забракованные данные задачей CONTREL
@@ -395,32 +402,103 @@ SUBROUTINE handle()
     df(el,:)%header(12)='speedW'
     df(el,:)%header(13)='temperature'
     df(el,:)%header(17)='name'
-    
+
+  CASE( 'APXITPS8')
+    ilat = 3;    ilon = 4
+    FORALL( j=1:NY )
+      !value_field2(1:2,j,t) = value_field(1:2,j,t)                         ! index
+      value_field2(3:4,j,t)  =  value_field(3:4,j,t)*0.01                   ! lat, lon [degree]
+      value_field2(5:12,j,t) = (value_field(5:12,j,t)-1000)*0.1+unitTemp    ! t2m
+      value_field2(16,j,t) = value_field(16,j,t)*unitPressure               ! daily average pressure
+      ! value_field2(17,j,t) = value_field(17,j,t)*0.1                      ! maxWind
+      !value_field2(12:14,j,t)=value_field(12:14,j,t)                       ! direct, speed, kind baric tendency
+      ! value_field2(15,j,t)=(value_field(15,j,t)-1000)*unitPressure        ! pressure tendency [Pa/3hour]
+      ! value_field2(16:17,j,t)=value_field(16:17,j,t)*0.1                  ! horisontal visiable [m], sunlight [hour]
+      ! value_field2(18:19,j,t)=value_field(18:19,j,t)*unitCloud            ! total cloud in [ball->%], Hh[ball->%]
+     !value_field2(20:23,j,t)=value_field(20:23,j,t)                      ! Cl[code], Cm[code], Ch[code], HBASE_CL [m]
+      ! value_field2(24:25,j,t)=value_field(24:25,j,t)                      ! ww (current weather)[code 4677], ww1(past weather)[code 4561]
+      ! value_field2(26:28,j,t)=(value_field(26:28,j,t)-1000)*0.1+unitTemp  ! tmin, tmax, tgmin
+      ! value_field2(29:31,j,t)=value_field(29:31,j,t)*0.1                  ! R6,R12,R24 - precipitation for 6,12,24 hours [mm] 
+      ! value_field2(32,j,t)=(value_field(32,j,t)-1000)*0.1 +unitTemp       ! TG (temp soil)
+     !value_field2(33:40,j,t)=value_field(33:40,j,t)                      ! Hsnow [cm]
+      ! value_field2(41:43,j,t)=value_field(41:43,j,t)*0.1                  ! PBagrCorrect, PHCorrect, PExetter [gpa]
+      ! value_field2(44:46,j,t)=value_field(44:46,j,t)*0.1                  ! THCorrect, TPExetter, Tmsl [C]
+
+      value_field2(30:31,j,t) = value_field(30:31,j,t)*0.1 + unitTemp
+
+    ENDFORALL
+
+    ! df(el,:)%header(1:36)  = '-'
+    df(el,:)%header(1)  = 'index'
+    df(el,:)%header(2)  = 'index'
+    df(el,:)%header(3)  = 'lat'
+    df(el,:)%header(4)  = 'lon'
+
+    df(el,:)%header(5)  = 't2m: 0h'
+    df(el,:)%header(6)  = '3h'
+    df(el,:)%header(7)  = '6h'
+    df(el,:)%header(8)  = '9h'
+    df(el,:)%header(9)  = '12h'
+    df(el,:)%header(10) = '15h'
+    df(el,:)%header(11) = '18h'
+    df(el,:)%header(12) = '21h'
+    df(el,:)%header(13) = 'tmin'
+    df(el,:)%header(14) = 'tmax'
+    df(el,:)%header(15) = 'hsnow'
+
+    df(el,:)%header(16) = 'davePS'
+    df(el,:)%header(17) = 'maxWind'
+    df(el,:)%header(18) = 'daveT'
+    df(el,:)%header(19) = 'davePMSL'
+    df(el,:)%header(20) = 'daveTd'
+
+    df(el,:)%header(21) = 'R6'
+    df(el,:)%header(22) = 'R6'
+    df(el,:)%header(23) = 'R6'
+    df(el,:)%header(24) = 'R6'
+    df(el,:)%header(25) = 'R12'
+    df(el,:)%header(26) = 'R12'
+    df(el,:)%header(27) = 'R24'
+    df(el,:)%header(28) = 'R24'
+
+    df(el,:)%header(29) = 'dursun'
+
+    df(el,:)%header(30) = 'Tnorm'
+    df(el,:)%header(31) = 'dTnorm'
+
+    df(el,:)%header(32) = 'cTMin'
+    df(el,:)%header(33) = 'cTMax'
+    df(el,:)%header(34) = 'minHoriz'
+
+    df(el,:)%header(35) = 'dirMaxW'
+    df(el,:)%header(36) = 'ths|hail'
+
   ENDSELECT handle_maket
 
-  ! »зменить входную константу отсутстви€ данных на выходную
+  ! «амена входной константы отсутстви€ данных на выходную
   WHERE( value_field == iundef )  value_field2 = oundef
-  
-  SELECT CASE( RECNAME(el) )
-  CASE( 'SYNOPMAK','SYNOPDOP','TEMPMAKT','TEBDTMAK','TEBDWMAK','TEMPALLC' )
+  ALLOCATE( filterSt(NY) )
+  filterSt = .FALSE.
 
-    ALLOCATE( filterSt(NY) )
-    filterSt = .FALSE.
+  filter: SELECT CASE( RECNAME(el) )
+  CASE( 'SYNOPMAK','SYNOPDOP','TEMPMAKT','TEBDTMAK','TEBDWMAK','TEMPALLC','APXITPS8' )
 
     IF(LP > 1) WRITE(*,*) 'filterArea = ', filterArea
 
     IF    ( filterArea == 'RU40'  ) THEN
-      WHERE( value_field(1,:,t) > 40 .and. value_field(1,:,t) < 100 )  &
-                filterSt = iundef  ! only for near Russia station 1-40
+      WHERE( value_field(1,:,t) > 40 .AND. value_field(1,:,t) < 100 )  &
+        filterSt = .TRUE.  ! only for near Russia station 1-40
 
-    ELSEIF( (filterArea == 'cm_ena' .or. filterArea == 'cm_ENA') .and. &
+    ELSEIF( (filterArea == 'cm_ena' .OR. filterArea == 'cm_ENA') .AND. &
             RECNAME(el)(1:5) == 'SYNOP' )THEN
-      CALL filterAreaCmENA( value_field2(3,:,t),value_field2(4,:,t), NY, filterSt )
+      CALL filterAreaCmENA( value_field2(3,:,t), value_field2(4,:,t), NY, filterSt )
+
+    ELSEIF( COUNT(filterCoord>0) >2 )THEN
+      CALL filterCoordinates( value_field2(ilat,:,t), value_field2(ilon,:,t), NY, filterSt )
 
     ENDIF
 
     WHERE( filterSt ) value_field(2,:,t) = iundef
-    DEALLOCATE( filterSt )
 
     IF( RECNAME(el)=='TEMPMAKT' )THEN
       CALL remove_sort_voidSt()
@@ -431,38 +509,54 @@ SUBROUTINE handle()
   CASE( 'SHIPBMAK' )
 
     IF( filterArea=='RU40' )THEN
-      WHERE( value_field(3,:,t) > 30     &
-       .and. value_field(4,:,t) >  0 )  value_field(2,:,t) = iundef   ! area lat[30-90], lon[0-180]
+      WHERE( value_field(3,:,t) > 30 .AND.  value_field(4,:,t) >  0 )  &
+        value_field(2,:,t) = iundef   ! area lat[30-90], lon[0-180]
+
+    ELSEIF( COUNT(filterCoord>0) >2 )THEN
+      CALL filterCoordinates( value_field2(ilat,:,t), value_field2(ilon,:,t), NY, filterSt )
+
     ENDIF
 
+    WHERE( filterSt ) value_field(2,:,t) = iundef
     CALL remove_sort_voidSt2()
 
   CASE( 'AIREPMAK' )
+  
     CALL remove_sort_voidSt2()
     IF( filterAREA=='RU40' )THEN
-      WHERE( value_field(5,:,t) > 30   .and.   &
+      WHERE( value_field(5,:,t) > 30   .AND.   &
              value_field(6,:,t) >  0  )  value_field(2,:,t)=iundef   ! area lat[30-90], lon[0-180]
+
+    ELSEIF( filterArea == 'cm_ena' .OR. filterArea == 'cm_ENA' )THEN
+      CALL filterAreaCmENA( value_field2(5,:,t),value_field2(6,:,t), NY, filterSt )
+
+    ELSEIF( COUNT(filterCoord>0) >2 )THEN
+      CALL filterCoordinates( value_field2(ilat,:,t), value_field2(ilon,:,t), NY, filterSt )
+
     ENDIF
+
+    WHERE( filterSt ) value_field(2,:,t) = iundef
+
+    CALL remove_voidSt()
 
   CASE DEFAULT 
     value_field3(1:NX,1:NY,t) = value_field2(1:NX,1:NY,t)
 
-  ENDSELECT
+  ENDSELECT filter
+  DEALLOCATE( filterSt )
   
 ENDSUBROUTINE HANDLE
 
 SUBROUTINE filterAreaCmENA( gLat, gLon, NY, filterSt )
 
-  ! integer*4, parameter :: NX=700 !       
-  ! integer*4, parameter :: NY=620 !
   INTEGER, INTENT(IN) :: NY
-  real*4, parameter ::  pollat     =  25 ! latitude of the rotated north pole
-  real*4, parameter ::  pollon     = -90 ! longitude of the rotated north pole
-  real*4, parameter ::  rlon_start = -60 ! first longitude of the grid
-  real*4, parameter ::  rlat_start = -30 ! first latitude of the grid
-  real*4, parameter ::  rlon_end   =  60 ! last longitude of the grid
-  real*4, parameter ::  rlat_end   =  30 ! last latitude of the grid
-  real*4, parameter ::  polgam     =   0 ! angle between the north poles of the systems
+  REAL*4, PARAMETER ::  pollat     =  25 ! latitude of the rotated north pole
+  REAL*4, PARAMETER ::  pollon     = -90 ! longitude of the rotated north pole
+  REAL*4, PARAMETER ::  rlon_start = -60 ! first longitude of the grid
+  REAL*4, PARAMETER ::  rlat_start = -30 ! first latitude of the grid
+  REAL*4, PARAMETER ::  rlon_end   =  60 ! last longitude of the grid
+  REAL*4, PARAMETER ::  rlat_end   =  30 ! last latitude of the grid
+  REAL*4, PARAMETER ::  polgam     =   0 ! angle between the north poles of the systems
   REAL*4 :: phi2phirot, rla2rlarot
   ! INTEGER :: inSt, outSt
 
@@ -485,9 +579,30 @@ SUBROUTINE filterAreaCmENA( gLat, gLon, NY, filterSt )
   filterSt = .TRUE.
   WHERE( (rlat > rlat_start .and. rlat < rlat_end) .and. &
          (rlon > rlon_start .and. rlon < rlon_end) ) filterSt = .FALSE.
+  WHERE( rlat == oundef ) filterSt = .TRUE.
   IF( LP>2) WRITE(*,*) COUNT(filterSt), 'stations will be rejected filterAreaCmENA'
 
 ENDSUBROUTINE filterAreaCmENA
+
+SUBROUTINE filterCoordinates( gLat, gLon, NY, filterSt )
+
+  INTEGER, INTENT(IN) :: NY
+  ! REAL*4, PARAMETER ::  pollat =  25
+  ! REAL*4 :: phi2phirot, rla2rlarot
+  ! INTEGER :: inSt, outSt
+
+  REAL*8,DIMENSION(NY), INTENT(IN) :: glon, glat
+  LOGICAL, INTENT(OUT) :: filterSt(NY)
+
+  ! IF( LP>4) WRITE(*,*)  glon(1:10)
+
+  filterSt = .TRUE.
+  WHERE( (glat >= filterCoord(3) .AND. glat <= filterCoord(4)  ) .AND. &
+         (glon >= filterCoord(1) .AND. glon <= filterCoord(4)) ) filterSt = .FALSE.
+  WHERE( glat == oundef ) filterSt = .TRUE.
+  IF( LP>2) WRITE(*,*) COUNT(filterSt), 'stations will be rejected filterCoordinates'
+
+ENDSUBROUTINE filterCoordinates
 
 SUBROUTINE remove_voidSt()
 
@@ -496,20 +611,22 @@ SUBROUTINE remove_voidSt()
     DO j=1,NY
       IF ( value_field(2,j,t) /= iundef .and. &
            value_field(1,j,t) /= 22222  .and. &
-           value_field(1,j,t) /= iundef       ) THEN
+           value_field(1,j,t) /= iundef .and. &
+           value_field(1,j,t) /= oundef       ) THEN
+           ! WRITE(*,*) value_field(2,j,t), value_field(1,j,t)
         jj=jj+1
         value_field3(:,jj,t) = value_field2(:,j,t)
       ENDIF
     ENDDO
 
-    NY=jj
+    NY = jj
     ! IF ( value_field(1,NY,t)==22222 ) THEN
-      ! NY=jj-1        ! last stantion 22222
-      ! IF (LP > 4 ) WRITE (*,*) 'last stantion was remove'
+      ! NY=jj-1        ! last station 22222
+      ! IF (LP > 4 ) WRITE (*,*) 'last station was remove'
     ! ENDIF
 
     df(el,t)%NY = NY
-    IF (LP > 1) WRITE(*,'("valid stantion=",i5," from ", i5)') NY, j-1
+    IF (LP > 1) WRITE(*,'("valid station=",i5," from ", i5)') NY, j-1
 
 ENDSUBROUTINE remove_voidSt
 
@@ -518,8 +635,8 @@ SUBROUTINE remove_sort_voidSt()
   INTEGER*4  jj1, jj2, jj3
 
   IF ( value_field(1,NY,t)==22222 ) THEN
-    NY=NY-1        ! last stantion 22222
-    IF(LP > 4) WRITE (*,*) 'last stantion was remove'
+    NY=NY-1        ! last station 22222
+    IF(LP > 4) WRITE (*,*) 'last station was remove'
   ENDIF
 
 ! remove empty station
@@ -555,7 +672,7 @@ SUBROUTINE remove_sort_voidSt()
   NY = df(el,t)%NYY(1) + df(el,t)%NYY(2) + df(el,t)%NYY(3)
   df(el,t)%NY = NY
 
-  WRITE(*,*)'valid stantion=', df(el,t)%NYY(1:3),' from ', NY
+  WRITE(*,*)'valid station=', df(el,t)%NYY(1:3),' from ', NY
 
 ENDSUBROUTINE remove_sort_voidSt
 
@@ -565,24 +682,24 @@ SUBROUTINE remove_sort_voidSt2()
 
   SELECT CASE( RECNAME(el) )
   CASE( 'SHIPBMAK' )
-    icf=(/46,46/)
-    vcf=(/21,152/) ! ship, buoy
-    lab=5
+    icf = (/46,46/)
+    vcf = (/21,152/) ! ship, buoy
+    lab = 5
   CASE( 'AIREPMAK' )
-    icf=(/ 4, 4/)
-    vcf=(/43,45/)  ! AMDAR, AIREP
-    lab=17
+    icf = (/ 4, 4/)
+    vcf = (/43,45/)  ! AMDAR, AIREP
+    lab = 17
   ENDSELECT
 
   IF (LP > 3 )  WRITE (*,*) '  sort and remove 2 value_field'
 
   IF ( value_field(1,NY,t)==22222 ) THEN
-    NY=NY-1        ! last stantion 22222
-    IF(LP > 4) WRITE (*,*) 'last stantion was remove'
+    NY=NY-1        ! last station 22222
+    IF(LP > 4) WRITE (*,*) 'last station was remove'
   ENDIF
 
 ! remove empty station
-  jj1=0;jj2=0
+  jj1 = 0; jj2 = 0
   DO j=1,NY
     IF( value_field(icf(1),j,t) == vcf(1) )THEN
       jj1=jj1+1
@@ -601,12 +718,12 @@ SUBROUTINE remove_sort_voidSt2()
     ENDIF
   ENDDO
 
-  df(el,t)%NYY(1)=jj1
-  df(el,t)%NYY(2)=jj2-jj1
+  df(el,t)%NYY(1) = jj1
+  df(el,t)%NYY(2) = jj2-jj1
 
-  NY=df(el,t)%NYY(1) + df(el,t)%NYY(2)
-  df(el,t)%NY=NY
+  NY = df(el,t)%NYY(1) + df(el,t)%NYY(2)
+  df(el,t)%NY = NY
 
-  WRITE(*,*) 'valid stantion=', df(el,t)%NYY(1), df(el,t)%NYY(2),' from ',j-1
+  WRITE(*,*) 'valid station=', df(el,t)%NYY(1), df(el,t)%NYY(2),' from ',j-1
 
 ENDSUBROUTINE remove_sort_voidSt2
