@@ -40,7 +40,7 @@ SUBROUTINE handle()
     ilat = 3;    ilon = 4
     FORALL( j=1:NY )
      !value_field2(1:2,j,t)=value_field(1:2,j,t)                          ! index
-      value_field2(3:4,j,t)=value_field(3:4,j,t)*0.01                     ! lat, lon [degree]
+      value_field2(3:4,j,t) = value_field(3:4,j,t)*0.01                     ! lat, lon [degree]
      !value_field2(5:7,j,el,t)=value_field(5:7,j,t)                       ! altitude [m], sigh, geopot
       value_field2(8:9,j,t)=value_field(8:9,j,t)*unitPressure             ! ps, pmsl
       value_field2(10:11,j,t)=(value_field(10:11,j,t)-1000)*0.1+unitTemp  ! t_2m, td_2m
@@ -342,21 +342,21 @@ SUBROUTINE handle()
     WHERE( value_field(14,:,t) > 4.0 ) value_field2(15,:,t) = -value_field2(15,:,t)
 
     df(el,:)%header(1)  = 'index'
-    df(el,:)%header(2)  = 'number'
+    df(el,:)%header(2)  = 'NShip'
     df(el,:)%header(3)  = 'lat'
     df(el,:)%header(4)  = 'lon'
     df(el,:)%header(5)  = 'name'
     df(el,:)%header(9)  = 'PMSL'
     df(el,:)%header(10) = 't_2m'
     df(el,:)%header(11) = 'td_2m'
-    df(el,:)%header(12) = 'directW'
-    df(el,:)%header(13) = 'speedW'
-    df(el,:)%header(14) = 'type_dpst'
-    df(el,:)%header(15) = 'dpst'
+    df(el,:)%header(12) = 'wDir'
+    df(el,:)%header(13) = 'wSp'
+    df(el,:)%header(14) = 'typeBT'
+    df(el,:)%header(15) = 'barTen'
     df(el,:)%header(16) = 'hVV'
     df(el,:)%header(17) = 'tsunl'
     df(el,:)%header(18) = 'clct'
-    df(el,:)%header(19) = 'clcl/clcm'
+    df(el,:)%header(19) = 'clcl/m'
     df(el,:)%header(20) = 'clcl'
     df(el,:)%header(21) = 'clcm'
     df(el,:)%header(22) = 'clch'
@@ -368,7 +368,7 @@ SUBROUTINE handle()
     df(el,:)%header(43) = 'pmsl_uk'
     df(el,:)%header(44) = 't2m_hc'
     df(el,:)%header(45) = 't2m_uk'
-    df(el,:)%header(46) = 'marker'
+    df(el,:)%header(46) = 'S|B'
 
   CASE( 'AIREPMAK')
     ilat = 5;    ilon = 6
@@ -489,9 +489,8 @@ SUBROUTINE handle()
       WHERE( value_field(1,:,t) > 40 .AND. value_field(1,:,t) < 100 )  &
         filterSt = .TRUE.  ! only for near Russia station 1-40
 
-    ELSEIF( (filterArea == 'cm_ena' .OR. filterArea == 'cm_ENA') .AND. &
-            RECNAME(el)(1:5) == 'SYNOP' )THEN
-      CALL filterAreaCmENA( value_field2(3,:,t), value_field2(4,:,t), NY, filterSt )
+    ELSEIF( filterArea == 'cm_ena' .OR. filterArea == 'cm_ENA' )THEN
+      CALL filterAreaCmENA( value_field2(ilat,:,t), value_field2(ilon,:,t), NY, filterSt )
 
     ELSEIF( COUNT(filterCoord>0) >2 )THEN
       CALL filterCoordinates( value_field2(ilat,:,t), value_field2(ilon,:,t), NY, filterSt )
@@ -512,16 +511,19 @@ SUBROUTINE handle()
       WHERE( value_field(3,:,t) > 30 .AND.  value_field(4,:,t) >  0 )  &
         value_field(2,:,t) = iundef   ! area lat[30-90], lon[0-180]
 
+    ELSEIF( filterArea == 'cm_ena' .OR. filterArea == 'cm_ENA' )THEN
+      CALL filterAreaCmENA( value_field2(ilat,:,t), value_field2(ilon,:,t), NY, filterSt )
+
     ELSEIF( COUNT(filterCoord>0) >2 )THEN
       CALL filterCoordinates( value_field2(ilat,:,t), value_field2(ilon,:,t), NY, filterSt )
 
     ENDIF
 
-    WHERE( filterSt ) value_field(2,:,t) = iundef
+    WHERE( filterSt ) value_field(46,:,t) = iundef
     CALL remove_sort_voidSt2()
 
   CASE( 'AIREPMAK' )
-  
+
     CALL remove_sort_voidSt2()
     IF( filterAREA=='RU40' )THEN
       WHERE( value_field(5,:,t) > 30   .AND.   &
@@ -561,7 +563,7 @@ SUBROUTINE filterAreaCmENA( gLat, gLon, NY, filterSt )
   ! INTEGER :: inSt, outSt
 
   REAL*8,DIMENSION(NY), INTENT(IN) :: glon, glat
-  REAL*4,DIMENSION(NY)   :: rlon, rlat
+  REAL*4,DIMENSION(NY) :: rlon, rlat
   LOGICAL, INTENT(OUT) :: filterSt(NY)
 
   DO i=1,NY
@@ -577,8 +579,8 @@ SUBROUTINE filterAreaCmENA( gLat, gLon, NY, filterSt )
   ! IF( LP>4) WRITE(*,*)  glat(1:10)
  
   filterSt = .TRUE.
-  WHERE( (rlat > rlat_start .and. rlat < rlat_end) .and. &
-         (rlon > rlon_start .and. rlon < rlon_end) ) filterSt = .FALSE.
+  WHERE( (rlat > rlat_start .AND. rlat < rlat_end) .AND. &
+         (rlon > rlon_start .AND. rlon < rlon_end) ) filterSt = .FALSE.
   WHERE( rlat == oundef ) filterSt = .TRUE.
   IF( LP>2) WRITE(*,*) COUNT(filterSt), 'stations will be rejected filterAreaCmENA'
 
@@ -587,18 +589,13 @@ ENDSUBROUTINE filterAreaCmENA
 SUBROUTINE filterCoordinates( gLat, gLon, NY, filterSt )
 
   INTEGER, INTENT(IN) :: NY
-  ! REAL*4, PARAMETER ::  pollat =  25
-  ! REAL*4 :: phi2phirot, rla2rlarot
-  ! INTEGER :: inSt, outSt
 
   REAL*8,DIMENSION(NY), INTENT(IN) :: glon, glat
   LOGICAL, INTENT(OUT) :: filterSt(NY)
 
-  ! IF( LP>4) WRITE(*,*)  glon(1:10)
-
   filterSt = .TRUE.
   WHERE( (glat >= filterCoord(3) .AND. glat <= filterCoord(4)  ) .AND. &
-         (glon >= filterCoord(1) .AND. glon <= filterCoord(4)) ) filterSt = .FALSE.
+         (glon >= filterCoord(1) .AND. glon <= filterCoord(2)) ) filterSt = .FALSE.
   WHERE( glat == oundef ) filterSt = .TRUE.
   IF( LP>2) WRITE(*,*) COUNT(filterSt), 'stations will be rejected filterCoordinates'
 
@@ -693,26 +690,26 @@ SUBROUTINE remove_sort_voidSt2()
 
   IF (LP > 3 )  WRITE (*,*) '  sort and remove 2 value_field'
 
-  IF ( value_field(1,NY,t)==22222 ) THEN
-    NY=NY-1        ! last station 22222
-    IF(LP > 4) WRITE (*,*) 'last station was remove'
+  IF( value_field(1,NY,t)==22222 )THEN
+    NY = NY - 1        ! last station 22222
+    IF( LP > 4 ) WRITE (*,*) 'last station was remove'
   ENDIF
 
 ! remove empty station
   jj1 = 0; jj2 = 0
   DO j=1,NY
     IF( value_field(icf(1),j,t) == vcf(1) )THEN
-      jj1=jj1+1
-      value_field3(:,jj1,t)=value_field2(:,j,t)
+      jj1 = jj1 + 1
+      value_field3(:,jj1,t) = value_field2(:,j,t)
       WRITE(idST(jj1),'(4a2)') INT(value_field2(lab:lab+3,j,t))
       df(el,t)%idST(jj1)(1:8) = TRIM(idST(jj1)(1:8))
     ENDIF
   ENDDO
-  jj2=jj1
+  jj2 = jj1
   DO j=1,NY
     IF( value_field(icf(2),j,t) == vcf(2) )THEN
-      jj2=jj2+1
-      value_field3(:,jj2,t)=value_field2(:,j,t)
+      jj2 = jj2+1
+      value_field3(:,jj2,t) = value_field2(:,j,t)
       WRITE(idST(jj2),'(4a2)') INT(value_field2(lab:lab+3,j,t))
       df(el,t)%idST(jj2)(1:8) = TRIM(idST(jj2)(1:8))
     ENDIF

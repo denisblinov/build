@@ -412,7 +412,7 @@ PROGRAM ReadBASE
     IF( RECNAME(el)=='SYNOPDOP' ) RECNAME(el) = 'SYNOPMAK'
   ENDDO
 
-  SELECT CASE (TRIM(typefile))
+  SELECT CASE( TRIM(typefile) )
   CASE( 'text' )  ! TERMINAL  and  TEXT   ! simple text field
     DO t=1,NT; DO el=1,NEL
 
@@ -451,7 +451,7 @@ PROGRAM ReadBASE
 
       IF (RECNAME(el)=='SYNOPDOP' .OR. RECNAME(el)=='SYNOPMAK') THEN
        !WRITE(ounit,'(45(a,"    "))') (trim(df(el,t)%header(i)),i=2,45)
-        WRITE(ounit,2210) (trim(df(el,t)%header(i)),i=2,46)
+        WRITE(ounit,2210) (TRIM(df(el,t)%header(i)),i=2,46)
         WRITE(ounit,2211)               ( &
          ( INT(var(el,t)%p2(1,j)), INT(var(el,t)%p2(2,j)),      & ! index
            (var(el,t)%p2(3:4,j)), INT(var(el,t)%p2(5,j)),       & ! lon,lat,h
@@ -517,21 +517,27 @@ PROGRAM ReadBASE
             (var(el,t)%p2(i,j),i=13,301,3)),  j=1,NY )
 
       ELSEIF( RECNAME(el)=='AIREPMAK' ) THEN
-        WRITE(ounit,'(12(a,"  "))') df(el,t)%header(2), df(el,t)%header(4:13),  df(el,t)%header(17)
+        WRITE(ounit,'(12(a,"  "))') df(el,t)%header(2), df(el,t)%header(4:13), &
+                                    df(el,t)%header(17)
         WRITE(ounit,'(i6, i3, 2f10.2, 2i6.4, 4i8, f10.2, " ",4a2)')   &
           (( INT(var(el,t)%p2(2,j)), INT(var(el,t)%p2(4,j)),          &
              var(el,t)%p2(5:6,j),    INT(var(el,t)%p2(7:8,j)),        &
              INT(var(el,t)%p2(9:12,j)),   var(el,t)%p2(13,j),         &
              INT(var(el,t)%p2(17:20,j)) ),j=1,NY )  
 
-      ELSEIF (RECNAME(el)=='SHIPBMAK') THEN
-        WRITE(ounit,'(27(a,"    "))')  df(el,t)%header(2:5), df(el,t)%header(9:26), df(el,t)%header(42:46)
-        WRITE(ounit,'(i5, 2f8.2, " ", 4a2, 3f8.2, 2i5, 13f8.1, 4f8.1, i4 )')   &
-        (( int(var(el,t)%p2(2,j)), (var(el,t)%p2(3:4,j)),    & 
-           int(var(el,t)%p2(5:8,j)),                         &
-           var(el,t)%p2(9:11,j), int(var(el,t)%p2(12:25,j)), &
+      ELSEIF( RECNAME(el)=='SHIPBMAK' )THEN
+        WRITE(ounit,2401)  ((TRIM(df(el,t)%header(i))),i= 2,5  ),  &
+                           ((TRIM(df(el,t)%header(i))),i= 9,26 ),  &
+                           ((TRIM(df(el,t)%header(i))),i=42,46 )
+        WRITE(ounit,2402)  &
+        (( INT(var(el,t)%p2(2,j)), (var(el,t)%p2(3:4,j)),    & 
+           INT(var(el,t)%p2(5:8,j)),                         &
+           var(el,t)%p2(9:11,j), INT(var(el,t)%p2(12:25,j)), &
            var(el,t)%p2(26,j), (var(el,t)%p2(42:45,j)),      &
-           int(var(el,t)%p2(46,j)) ) ,j=1,NY )
+           INT(var(el,t)%p2(46,j)) ),j=1,NY )
+
+        2401 FORMAT(( a5, 2a8, a9, 3a7, 2a5, 13(a8), 4a8, a4 ))
+        2402 FORMAT(( i5, 2(xf7.2), x, 4a2, 3(xf6.1), 2(xi4), 13(xf7.1), 4(xf7.1), x,i3 ))
 
       ELSEIF( RECNAME(el)=='APXITPS8' )THEN
         ! WRITE(ounit,'(35(a,"    "))')  df(el,t)%header(2:5), df(el,t)%header(9:26), df(el,t)%header(42:46)

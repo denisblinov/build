@@ -31,10 +31,16 @@ MYLIB = /RHM-GPFS/users/cosmo/dblinov/software/include/fortran
 #------------------------------------------------------------------------------
 FC = ifort
 LD = ifort -static
+# FC = gfortran
+# LD = gfortran -static
 
-COMFLG1 = -O2 -fast -parallel -fpp $(PRAGMA)
-COMFLG1 = -O2 -fast -parallel -fpp $(PRAGMA) -profile-functions -profile-loops
+ifeq (opt,$(mode))
+    COMFLG1 = -O2 -fpp $(PRAGMA)
+    # COMFLG1 = -O2 -fast -parallel -fpp $(PRAGMA)
+    # COMFLG1 = -O2 -fast -parallel -fpp $(PRAGMA) -profile-functions -profile-loops
+endif
 COMFLG1 = -g -O0 -traceback -fpp $(PRAGMA)
+# COMFLG1 = -g -O0 -fbacktrace -cpp $(PRAGMA)
 #------------------------------------------------------------------------------
 
 INCL = -I$(NETCDF_DIR)/include -I$(MYLIB) -I.
