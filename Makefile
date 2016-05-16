@@ -38,9 +38,11 @@ ifeq (opt,$(mode))
     COMFLG1 = -O2 -fpp $(PRAGMA)
     # COMFLG1 = -O2 -fast -parallel -fpp $(PRAGMA)
     # COMFLG1 = -O2 -fast -parallel -fpp $(PRAGMA) -profile-functions -profile-loops
+else
+    COMFLG1 = -g -O0 -traceback -fpp $(PRAGMA)
+    # COMFLG1 = -g -O0 -fbacktrace -cpp $(PRAGMA)    
 endif
-COMFLG1 = -g -O0 -traceback -fpp $(PRAGMA)
-# COMFLG1 = -g -O0 -fbacktrace -cpp $(PRAGMA)
+
 #------------------------------------------------------------------------------
 
 INCL = -I$(NETCDF_DIR)/include -I$(MYLIB) -I.
@@ -82,7 +84,8 @@ AMS:    module_main.f90 module_bufr.o  module_netCDF.o
 # ---------------- Cleaning: ------------------------------
 .PHONY: clean
 clean :
-		rm  *.o *.mod remDB_* test/cdfin_*
+		@echo cleaning
+		-rm  *.o *.mod remDB_* test/cdfin_*
 #-=--------------------------------------------------------
 
 

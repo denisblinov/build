@@ -34,9 +34,9 @@ MODULE  main_data
     INTEGER*4   ::           second
     CHARACTER*8              RECNAME ! name in base RHM
     CHARACTER*10::           charDATEHH
-    CHARACTER(len=12),DIMENSION(100)  ::  header  !
-    CHARACTER(len=12),DIMENSION(100)  ::  clevel  !
-    CHARACTER(len=8),DIMENSION(20000) ::  idST    ! list id
+    CHARACTER(LEN=12),DIMENSION(200)  ::  header  !
+    CHARACTER(LEN=12),DIMENSION(100)  ::  clevel  !
+    CHARACTER(LEN=8),DIMENSION(20000) ::  idST    ! list id
   ENDTYPE descrRECORD
 
   TYPE outfield
@@ -87,7 +87,7 @@ SUBROUTINE array_def( def )
     WRITE (*,*) 'term gather data         ',def(33)
     WRITE (*,*) 'termKeepGatherdata       ',def(34)
     WRITE (*,*) 'code discret             ',def(35)
-    WRITE (*,*) 'NY                       ',def(36)
+    WRITE (*,*) 'NRJ(NY) in Row           ',def(36)
     WRITE (*,'(a,3x,8i6)') 'list term forecast',def(37:44)
     WRITE (*,*) 'term forecast            ',def(45)
     WRITE (*,*) 'value NX_first           ',def(46)

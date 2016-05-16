@@ -53,10 +53,20 @@ SUBROUTINE handle()
       value_field2(26:28,j,t)=(value_field(26:28,j,t)-1000)*0.1+unitTemp  ! tmin, tmax, tgmin
       value_field2(29:31,j,t)=value_field(29:31,j,t)*0.1                  ! R6,R12,R24 - precipitation for 6,12,24 hours [mm] 
       value_field2(32,j,t)=(value_field(32,j,t)-1000)*0.1 +unitTemp       ! TG (temp soil)
-     !value_field2(33:40,j,t)=value_field(33:40,j,t)                      ! Hsnow [cm]
-      value_field2(41:43,j,t)=value_field(41:43,j,t)*0.1                  ! PBagrCorrect, PHCorrect, PExetter [gpa]
-      value_field2(44:46,j,t)=value_field(44:46,j,t)*0.1                  ! THCorrect, TPExetter, Tmsl [C]
+     !value_field2(33,j,t) = value_field(33,j,t)                          ! Hsnow [cm]
     END FORALL
+
+    IF( Date(t) > 20021231 )THEN
+      FORALL( j=1:NY )
+       !value_field2(34:40,j,t) = value_field(34:40,j,t)                    ! Rshift, E4, E1, E3, Sp1, Sp2, Sp3
+        value_field2(41:43,j,t) = value_field(41:43,j,t)*0.1                ! PBagrCorrect, PHCorrect, PExetter [gpa]
+        value_field2(44:46,j,t) = value_field(44:46,j,t)*0.1                ! THCorrect, TPExetter, Tmsl [C]
+      END FORALL
+    ! ELSE
+       !value_field2(34,j,t)    = value_field(34,j,t)                       ! marker storm and hail
+       !value_field2(35:40,j,t) = value_field(35:40,j,t)                    ! reserved
+    END IF
+
     ! Negative values is marker bad values from ASOI
     WHERE ( value_field(8:13,:,t) < 0 )  value_field2(8:13,:,t)=oundef
     ! ¬ базе встречаютс€ значени€ осадков, равные +9990. 
@@ -114,25 +124,37 @@ SUBROUTINE handle()
       df(el,:)%header(25) = 'pWW'
       df(el,:)%header(26) = 'tMin2m'
       df(el,:)%header(27) = 'tMax2m'
-      df(el,:)%header(28) = 'tMinG'
       df(el,:)%header(29) = 'R6'
       df(el,:)%header(30) = 'R12'
       df(el,:)%header(31) = 'R24'
       df(el,:)%header(32) = 't_g'
       df(el,:)%header(33) = 'hSnow'
-      df(el,:)%header(34) = 'shiftR'
-      df(el,:)%header(35) = 'E4'
-      df(el,:)%header(36) = 'E1'
-      df(el,:)%header(37) = 'E3'
-      df(el,:)%header(38) = 'sp1'
-      df(el,:)%header(39) = 'sp2'
-      df(el,:)%header(40) = 'sp3'
-      df(el,:)%header(41) = 'pmsl-B'
-      df(el,:)%header(42) = 'pmsl-hc'
-      df(el,:)%header(43) = 'pmsl-MO'
-      df(el,:)%header(44) = 't2m-hc'
-      df(el,:)%header(45) = 't2m-MO'
-      df(el,:)%header(46) = 'tmsl'
+
+      IF( Date(t) > 20021231 )THEN
+        df(el,:)%header(28) = 'tMinG'
+        df(el,:)%header(34) = 'shiftR'
+        df(el,:)%header(35) = 'E4'
+        df(el,:)%header(36) = 'E1'
+        df(el,:)%header(37) = 'E3'
+        df(el,:)%header(38) = 'sp1'
+        df(el,:)%header(39) = 'sp2'
+        df(el,:)%header(40) = 'sp3'
+        df(el,:)%header(41) = 'pmsl-B'
+        df(el,:)%header(42) = 'pmsl-hc'
+        df(el,:)%header(43) = 'pmsl-MO'
+        df(el,:)%header(44) = 't2m-hc'
+        df(el,:)%header(45) = 't2m-MO'
+        df(el,:)%header(46) = 'tmsl'
+     ELSE
+        df(el,:)%header(28) = 'tAveDay'
+        df(el,:)%header(34) = 'stm&hail'
+        df(el,:)%header(35) = '-'
+        df(el,:)%header(36) = '-'
+        df(el,:)%header(37) = '-'
+        df(el,:)%header(38) = '-'
+        df(el,:)%header(39) = '-'
+        df(el,:)%header(40) = '-'
+     ENDIF
 
     CASE( 'TEMPMAKT' ) handle_maket
       ilat = 5;    ilon = 6

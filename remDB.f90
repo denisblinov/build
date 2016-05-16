@@ -31,10 +31,10 @@ PROGRAM ReadBASE
   IMPLICIT NONE
 
 !--------------  Переменные для базы данных -----------------------------
-  CHARACTER*15 HOST/'192.168.97.72'/        ! ip-adress or name host with base
+  CHARACTER*15 HOST/'192.168.97.71'/        ! ip-adress or name host with base
   CHARACTER*4  nameBASE           ! name base
   INTEGER*4    codeOPEN/560701/, &    ! code access for OPEN base(one for one user/host)   
-               codeBASE               ! code(number) base /420511/
+               codeBASE/260601/        ! code(number) base /420511/
   LOGICAL   :: statBASE = .FALSE. !, cycleBASE = .TRUE.
 !------------------------------------------------------------------------
 !>>------------  Переменные для типа запроса ----------------------------
@@ -132,9 +132,9 @@ PROGRAM ReadBASE
     READ(iunit,field) 
     WRITE(*,*) ' input variable from namelist &OUTPUT'
     READ(iunit,output) 
-  ELSEIF(trim(typeINPUT)=='-f') THEN
+  ELSEIF(TRIM(typeINPUT)=='-f') THEN
     iunit=1001
-    OPEN (iunit, file=trim(inFile), status='old')
+    OPEN (iunit, file=TRIM(inFile), status='old')
     READ(iunit,base)
     READ(iunit,request)
     READ(iunit,field) 
@@ -160,7 +160,7 @@ PROGRAM ReadBASE
 
   IF ( startTerm>endTerm )  endTerm=startTerm
 
-  NT = COUNT( DATEHH > 1900010100, DIM=1 ) 
+  NT = COUNT( DATEHH > 1900010100, DIM=1 )
   SELECT CASE (listfields(1))
   CASE( 'SYNOPMAK', 'SYNOPDOP','SHIPBMAK', 'TEMPMAKT', 'TEBDTMAK', 'TEBDWMAK', 'AIREPMAK' )
     hstep = 6
@@ -179,7 +179,7 @@ PROGRAM ReadBASE
   ENDDO
 
   NEL0 = COUNT( listfields(:) /= '--------', DIM=1 )
-  
+
   ! set undef value for typefile
   SELECT CASE (TRIM(typefile))
   CASE( 'bufr4versus' )
@@ -187,7 +187,7 @@ PROGRAM ReadBASE
   CASE( 'binary4GRADS' )
     oundef = -9999.
   ENDSELECT
-  
+
   IF(LP>4) WRITE(*,*) HUGE(oundef),MAXEXPONENT(oundef),RADIX(oundef)
   
 !------------------------------------------------------
@@ -197,9 +197,9 @@ PROGRAM ReadBASE
   j=0;i=0
   loopListFields:  DO WHILE  ( i<NELmax .and. listfields(i+1)/='--------' )  ! cycle listfields
     !if( listfields(i)=='--------' )  exit loopListFields        ! exit when void value exist
-    j=j+1;i=i+1
+    j=j+1; i=i+1
 
-    IF( scan(listfields(i),'*_?.')==5 ) THEN
+    IF( SCAN(listfields(i),'*_?.')==5 ) THEN
       DO nterm = startTerm, endTerm, HFstep
         WRITE (termForecast,'(i3.3)') nterm
         RECNAME(j) = listfields(i)(1:4)//termForecast//listfields(i)(8:8)
@@ -213,16 +213,16 @@ PROGRAM ReadBASE
 
   ENDDO loopListFields
 
-  NEL=j
+  NEL = j
   IF (LP>4) WRITE(*,*)'NT=',NT, 'nel=', NEL, ' - after globbing'
 
 !--------------------------------------------
 
   Date(1:NT) = DATEHH(1:NT)/100           ! YMD422с  YYYYMMDD  Y4M2D2_c
   year(1:NT) = Date(1:NT)/10000           ! YYYYc  cYYYY  iYYYY year
-  month      = mod(Date(1:NT), 10000)/100 ! month iMM
-  Day(1:NT)  = mod(Date(1:NT), 100)       ! Day DD iDD
-  hour(1:NT) = mod(DATEHH(1:NT), 100)     ! iHH hour
+  month      = MOD(Date(1:NT), 10000)/100 ! month iMM
+  Day(1:NT)  = MOD(Date(1:NT), 100)       ! Day DD iDD
+  hour(1:NT) = MOD(DATEHH(1:NT), 100)     ! iHH hour
 
   ALLOCATE( df(1:nel,1:NT), var(1:nel,1:NT) )
 
@@ -367,7 +367,10 @@ PROGRAM ReadBASE
         IF (LP >5 ) WRITE(*,*) RECNAME(el),Date(t),hour(t),' codeRETURN= ',codeRETURN
       ENDIF
       !WRITE(FileName,'(i8,i2.2,a4)') Date, hour,RECNAME;     WRITE(*,*) 'numberElements = ',NEL
-      IF (LP >9 )  WRITE(*,*) RECNAME(el),Date(t),hour(t),'MINvalue1,2= ',minval(value_field(:,:,t)),minval(value_field(:,:,t), MASK=value_field(:,:,t)>iundef),'MAXvalue= ',maxval(value_field(:,:,t))
+      IF (LP >9 )  WRITE(*,*) RECNAME(el),Date(t),hour(t), &
+                              'MINvalue1,2= ',MINVAL(value_field(:,:,t)), &
+                              MINVAL(value_field(:,:,t), MASK=value_field(:,:,t)>iundef), &
+                              'MAXvalue= ',MAXVAL(value_field(:,:,t))
 
       value_field2 = value_field
 
@@ -399,7 +402,7 @@ PROGRAM ReadBASE
   ENDIF
 
 
-  IF (LP > 5) WRITE(10001,'(46f8.1)')  ((var(1,1)%p2(i,j),i=1,46),j=1,df(1,1)%NY) ! for debug synop maket
+  IF (LP > 5) WRITE(10001,'(:46f8.1)')  ((var(1,1)%p2(i,j),i=1,df(1,1)%NX),j=1,df(1,1)%NY) ! for debug synop maket
   IF (LP > 4) WRITE(*, * ) 'ubound(var(1,1)%p2) = ', ubound(var(1,1)%p2)  ! bounds array
 
 
@@ -417,15 +420,15 @@ PROGRAM ReadBASE
     DO t=1,NT; DO el=1,NEL
 
       IF( incrYdir == -1 )THEN
-        oNXstart=1
-        oNXend=df(el,t)%NX
-        oNYstart=df(el,t)%NY
-        oNYend=1
+        oNXstart = 1
+        oNXend   = df(el,t)%NX
+        oNYstart = df(el,t)%NY
+        oNYend   = 1
       ELSE
-        oNXstart=1
-        oNXend=df(el,t)%NX
-        oNYstart=1
-        oNYend=df(el,t)%NY
+        oNXstart = 1
+        oNXend   = df(el,t)%NX
+        oNYstart = 1
+        oNYend   = df(el,t)%NY
       ENDIF
 
       OPEN (ounit,file=TRIM(filename), position='append')
@@ -449,34 +452,54 @@ PROGRAM ReadBASE
       OPEN (ounit,file=TRIM(ofilename), position='append')
       !WRITE(ounit,*) 'DATE=',Date(t), hour(t), 'zab=',startTerm;
 
-      IF (RECNAME(el)=='SYNOPDOP' .OR. RECNAME(el)=='SYNOPMAK') THEN
+      IF ( RECNAME(el)(1:5)=='SYNOP' .AND. Date(t) > 20021231 ) THEN
        !WRITE(ounit,'(45(a,"    "))') (trim(df(el,t)%header(i)),i=2,45)
-        WRITE(ounit,2210) (TRIM(df(el,t)%header(i)),i=2,46)
-        WRITE(ounit,2211)               ( &
-         ( INT(var(el,t)%p2(1,j)), INT(var(el,t)%p2(2,j)),      & ! index
-           (var(el,t)%p2(3:4,j)), INT(var(el,t)%p2(5,j)),       & ! lon,lat,h
-           INT(var(el,t)%p2(6:9,j)),                            & !
-           var(el,t)%p2(10:11,j),                               & ! 
-           INT(var(el,t)%p2(12,j)), INT(var(el,t)%p2(13,j)),    &
-           INT(var(el,t)%p2(14,j)),  var(el,t)%p2(15,j),        &
-           (var(el,t)%p2(16:17,j)),      &
-           INT(var(el,t)%p2(18:25,j)),  &
-           (var(el,t)%p2(26:32,j)),     &
-           INT(var(el,t)%p2(33:40,j)),  &
-           (var(el,t)%p2(41:46,j)) ), j=1,NY )
+          WRITE(ounit,2210) (TRIM(df(el,t)%header(i)),i=2,46)
+          WRITE(ounit,2211)               ( &
+           ( INT(var(el,t)%p2(1,j)), INT(var(el,t)%p2(2,j)),      & ! index
+             (var(el,t)%p2(3:4,j)), INT(var(el,t)%p2(5,j)),       & ! lon,lat,h
+             INT(var(el,t)%p2(6:9,j)),                            & !
+             var(el,t)%p2(10:11,j),                               & !
+             INT(var(el,t)%p2(12,j)), INT(var(el,t)%p2(13,j)),    &
+             INT(var(el,t)%p2(14,j)),  var(el,t)%p2(15,j),        &
+             (var(el,t)%p2(16:17,j)),     &
+             INT(var(el,t)%p2(18:25,j)),  &
+             (var(el,t)%p2(26:32,j)),     &
+             INT(var(el,t)%p2(33:40,j)),  &
+             (var(el,t)%p2(41:46,j)) ), j=1,NY )
 
-        IF(LP>3) WRITE(*,*) NY,'last point:', var(el,t)%p2(:,NY)
-
-      2210 FORMAT(( a5,a8,a9,a7,a4,3a6,2a6,35(x,a6) ))
+             IF(LP>3) WRITE(*,*) NY,'last point:', var(el,t)%p2(:,NY)
+             
+      2210 FORMAT(( a5,a8,a9,a7,a4,3a6,2a6,:35(x,a6) ))
       2211 FORMAT(( i2,i3.3, xf7.3,xf8.3, xi6, xi3,xi5,xi5,xi5, xf5.1,xf5.1, &
                     2(xi6), xi6, 3(xf6.1), 8(xi6), 7(xf6.1), 8(xi6), 6(xf6.1) ))
+
+      ELSEIF( RECNAME(el)(1:5)=='SYNOP' .AND. Date(t) <= 20021231 )THEN
+
+        WRITE(ounit,2212) (TRIM(df(el,t)%header(i)),i=2,34)
+          WRITE(ounit,2213)               ( &
+           ( INT(var(el,t)%p2(1,j)), INT(var(el,t)%p2(2,j)),      & ! index
+             (var(el,t)%p2(3:4,j)), INT(var(el,t)%p2(5,j)),       & ! lon,lat,h
+             INT(var(el,t)%p2(6:9,j)),                            & !
+             var(el,t)%p2(10:11,j),                               & !
+             INT(var(el,t)%p2(12,j)), INT(var(el,t)%p2(13,j)),    &
+             INT(var(el,t)%p2(14,j)),  var(el,t)%p2(15,j),        &
+             (var(el,t)%p2(16:17,j)),     &
+             INT(var(el,t)%p2(18:25,j)),  &
+             (var(el,t)%p2(26:32,j)),     &
+             INT(var(el,t)%p2(33:34,j))   &
+                                        ), j=1,NY )
+
+      2212 FORMAT(( a5,a8,a9,a7,a4,3a6,2a6,:35(x,a6) ))
+      2213 FORMAT(( i2,i3.3, xf7.3,xf8.3, xi6, xi3,xi5,xi5,xi5, xf5.1,xf5.1, &
+                    2(xi6), xi6, 3(xf6.1), 8(xi6), 7(xf6.1), 2(xi6) ))
 
       ELSEIF( RECNAME(el)=='TEMPMAKT' ) THEN
         ! WRITE(ounit,'(100(a,"    "))') df(el,t)%header(2:96)
         WRITE(ounit,'(a6, a4, a7,a7,a8, 2(a6), 5(xa6),75(xa5), 5(xa6), 42(xa6), 8(xa5))')  & 
-                     (trim(df(el,t)%header(i)),i=2,8),   &
-                     (trim(df(el,t)%header(i)),i=11,90),  &
-                     (trim(df(el,t)%header(i)),i=96,142)
+                     (TRIM(df(el,t)%header(i)),i=2,8),   &
+                     (TRIM(df(el,t)%header(i)),i=11,90),  &
+                     (TRIM(df(el,t)%header(i)),i=96,142)
         WRITE(ounit, 2003 ) &
              (( INT(var(el,t)%p2(1,j)), INT(var(el,t)%p2(2,j)),              &
                 INT(var(el,t)%p2(3,j)),    &
@@ -560,6 +583,9 @@ PROGRAM ReadBASE
       2310 FORMAT(( a5, a8,a9, 32(x,a6) ))
       2311 FORMAT(( i2,i3.3, xf7.3,xf8.3, 8(xf6.1), 3(xi6), xf6.1, xi3, xi2, 12(xi6), 2(xf6.1), 5(xi6) ))
 
+      ELSEIF( RECNAME(el)(1:7)=='SLOVPUR' )
+        WRITE(*,*) 'Need commands for SLOVPUR:', RECNAME(el)
+
       ELSE
         WRITE(*,*) 'No maket for this RECNAME:', RECNAME(el)
 
@@ -582,41 +608,56 @@ PROGRAM ReadBASE
       j=1;jj=1
       DO WHILE ( listPoints(jj)>iundef .AND. j<=NY  )
         IF (LP > 5 ) WRITE (*,*) 'seach station',jj,j, listPoints(jj)
-        IF(  int(var(el,t)%p2(1,j)*1000+var(el,t)%p2(2,j),4)==INT(listPoints(jj),4)  )THEN
+        IF(  INT(var(el,t)%p2(1,j)*1000+var(el,t)%p2(2,j),4)==INT(listPoints(jj),4)  )THEN
           IF (LP > 5 ) WRITE (*,*) 'FIND station !!!',jj,j
           IF (FileName=='ID')  WRITE(oFileName,'(i5.5)') listPoints(jj)
-          OPEN (ounit,file=TRIM(ofilename)//'.csv', position='append')
+          OPEN (ounit,FILE=TRIM(ofilename)//'.csv', position='append')
 
           SELECT CASE( df(el,t)%RECNAME )
           CASE( 'SYNOPMAK', 'SYNOPDOP' )
             IF(t==1 .AND. el==1) WRITE(ounit,'(a16,45(a,";"))')'DATE;', df(el,t)%header(2:46)
             WRITE(ounit,6401)  &
-              strDATE, int(var(el,t)%p2(1,j)), int(var(el,t)%p2(2,j)), &
-              var(el,t)%p2(3:4,j), ( int(var(el,t)%p2(i,j)) ,i=5,7),   &
+              strDATE, INT(var(el,t)%p2(1,j)), INT(var(el,t)%p2(2,j)), &
+              var(el,t)%p2(3:4,j), ( INT(var(el,t)%p2(i,j)) ,i=5,7),   &
               var(el,t)%p2(8:9,j), (var(el,t)%p2(10:46,j))
 
           CASE('TEMPMAKT')
-            WRITE(ounit,6002) strDATE, int(var(el,t)%p2(1,j)),int(var(el,t)%p2(2,j)), var(el,t)%p2(5:6,j), int(var(el,t)%p2(4,j),4)
+            WRITE(ounit,6002) strDATE,  &
+                              INT(var(el,t)%p2(1,j)),INT(var(el,t)%p2(2,j)), &
+                              var(el,t)%p2(5:6,j), INT(var(el,t)%p2(4,j),4)
             WRITE(ounit,*)'Pressure;','H;','T;','D_TD;','WDir;','WSpeed;'
-            WRITE(ounit,6001) trim(df(el,t)%clevel(96)), int(var(el,t)%p2(96,j)), var(el,t)%p2(97,j), var(el,t)%p2(98,j),int(var(el,t)%p2(99,j)),var(el,t)%p2(100,j)
+            WRITE(ounit,6001) TRIM(df(el,t)%clevel(96)), INT(var(el,t)%p2(96,j)), &
+                              var(el,t)%p2(97,j), var(el,t)%p2(98,j),    &
+                              INT(var(el,t)%p2(99,j)),var(el,t)%p2(100,j)
             DO l=11,86,5
-              WRITE(ounit,6001) trim(df(el,t)%clevel(l)), int(var(el,t)%p2(l,j)), var(el,t)%p2(l+1,j), var(el,t)%p2(l+2,j),int(var(el,t)%p2(l+3,j)),var(el,t)%p2(l+4,j)
+              WRITE(ounit,6001) TRIM(df(el,t)%clevel(l)), INT(var(el,t)%p2(l,j)), &
+                                var(el,t)%p2(l+1,j), var(el,t)%p2(l+2,j), &
+                                INT(var(el,t)%p2(l+3,j)),var(el,t)%p2(l+4,j)
             ENDDO
-            WRITE(ounit,*) int(var(el,t)%p2(93,j)), int(var(el,t)%p2(94,j)), int(var(el,t)%p2(95,j))
+            WRITE(ounit,*) INT(var(el,t)%p2(93,j)), INT(var(el,t)%p2(94,j)), &
+                           INT(var(el,t)%p2(95,j))
             DO l=101,121,4
-              WRITE(ounit,5001) trim(df(el,t)%clevel(l)), var(el,t)%p2(l,j), var(el,t)%p2(l+1,j), int(var(el,t)%p2(l+2,j)), var(el,t)%p2(l+3,j)
+              WRITE(ounit,5001) TRIM(df(el,t)%clevel(l)), var(el,t)%p2(l,j), &
+                                var(el,t)%p2(l+1,j), INT(var(el,t)%p2(l+2,j)), &
+                                var(el,t)%p2(l+3,j)
             ENDDO
             DO l=125,140,3
-              WRITE(ounit,4001) trim(df(el,t)%clevel(l)), var(el,t)%p2(l,j), int(var(el,t)%p2(l+1,j)), var(el,t)%p2(l+2,j)
+              WRITE(ounit,4001) TRIM(df(el,t)%clevel(l)), var(el,t)%p2(l,j), &
+                                INT(var(el,t)%p2(l+1,j)), var(el,t)%p2(l+2,j)
             ENDDO
 
           CASE('TEMPALLC')
-            WRITE(ounit,6002) strDATE, int(var(el,t)%p2(1,j)),int(var(el,t)%p2(2,j)), var(el,t)%p2(6:7,j), int(var(el,t)%p2(5,j),4)
+            WRITE(ounit,6002) strDATE, &
+                              INT(var(el,t)%p2(1,j)), INT(var(el,t)%p2(2,j)), &
+                              var(el,t)%p2(6:7,j), INT(var(el,t)%p2(5,j),4)
             WRITE(ounit,*) 'Pressure;','H;','T;','D_TD;','WDir;','WSpeed;','lev;','cP;','cH;','cT;','cTd;','cDD;','cFF;'
             DO l=14,(var(el,t)%p2(11,j)+1)*13,13  !
               WRITE(ounit,3101)     &
-                var(el,t)%p2(l+1,j), int(var(el,t)%p2(l+3,j)), var(el,t)%p2(l+5,j), var(el,t)%p2(l+7,j), int(var(el,t)%p2(l+9,j)), int(var(el,t)%p2(l+11,j),4), int(var(el,t)%p2(l,j),4),        &
-                ( int(var(el,t)%p2(ll,j),4), ll=l+2,l+12,2)    !int(var(el,t)%p2(l+4,j),4), int(var(el,t)%p2(l+6,j),4), int(var(el,t)%p2(l+8,j),4), int(var(el,t)%p2(l+10,j),4), int(var(el,t)%p2(l+12,j),4)
+                var(el,t)%p2(l+1,j), INT(var(el,t)%p2(l+3,j)), &
+                var(el,t)%p2(l+5,j), var(el,t)%p2(l+7,j), &
+                INT(var(el,t)%p2(l+9,j)), INT(var(el,t)%p2(l+11,j),4), &
+                INT(var(el,t)%p2(l,j),4),        &
+                ( INT(var(el,t)%p2(ll,j),4), ll=l+2,l+12,2)    !int(var(el,t)%p2(l+4,j),4), int(var(el,t)%p2(l+6,j),4), int(var(el,t)%p2(l+8,j),4), int(var(el,t)%p2(l+10,j),4), int(var(el,t)%p2(l+12,j),4)
             ENDDO
             WRITE(ounit,*)
 
@@ -649,7 +690,7 @@ PROGRAM ReadBASE
       OPEN (11,file=trim(oDirName)//trim(oFileName),FORM='UNFORMATTED',  RECORDTYPE='STREAM')
       NY=df(el,t)%NY
       DO j=1,NY          ! Cycle for each station
-        IF( j<10  .and. LP > 5 ) WRITE (*,*)'==',df(el,t)%idST(j),'==', var(el,t)%p2(3,j),var(el,t)%p2(4,j)
+        IF( j<10  .AND. LP > 5 ) WRITE (*,*)'==',df(el,t)%idST(j),'==', var(el,t)%p2(3,j),var(el,t)%p2(4,j)
         WRITE (11) df(el,t)%idST(j), var(el,t)%p2(3,j), var(el,t)%p2(4,j), 0.0_4, NLEV, NFLAG
         WRITE (11) ( var(el,t)%p2(1:df(el,t)%NX,j) )
       ENDDO
@@ -740,23 +781,23 @@ PROGRAM ReadBASE
         NY=df(el,t)%NY
 
         IF (FileName=='DATE_RECNAME')  oFileName=df(el,t)%charDATEHH//'_'//RECNAME(el)
-        OPEN (ounit,file=trim(ofilename), position='append')
+        OPEN (ounit,FILE=TRIM(ofilename), position='append')
         WRITE(ounit,'(a30)') '  index     lat     lon  height'
-        IF ( RECNAME(el)=='SYNOPMAK' .or. RECNAME(el)=='SYNOPDOP')THEN
+        IF ( RECNAME(el)=='SYNOPMAK' .OR. RECNAME(el)=='SYNOPDOP')THEN
             WRITE(ounit,'(i7, 3f12.2)')  &
-              (( int(var(el,t)%p2(1,j)*1000+var(el,t)%p2(2,j)), &
+              (( INT(var(el,t)%p2(1,j)*1000+var(el,t)%p2(2,j)), &
               (var(el,t)%p2(3:5,j))   ),j=1,NY )
-        ELSEIF (RECNAME(el)=='TEMPMAKT'  &
-               .or. RECNAME(el)=='TEBDTMAK' .or. RECNAME(el)=='TEBDWMAK') THEN
+        ELSEIF (RECNAME(el)=='TEMPMAKT' .OR. &
+                RECNAME(el)=='TEBDTMAK' .OR. RECNAME(el)=='TEBDWMAK') THEN
             WRITE(ounit,'(i7, 3f12.2)')  &
-              (( int(var(el,t)%p2(1,j)*1000+var(el,t)%p2(2,j)), &
+              (( INT(var(el,t)%p2(1,j)*1000+var(el,t)%p2(2,j)), &
               (var(el,t)%p2(5:6,j)),(var(el,t)%p2(4,j))   ),j=1,NY )
         ENDIF
         CLOSE(ounit)
 
     ENDDO; ENDDO  ! cycle  RECORD ; cycle  time
 
-    OPEN (ounit,file='SLOVPUR3.txt', status='unknown')
+    OPEN (ounit,FILE='SLOVPUR3.txt', status='unknown')
     WRITE(ounit,'(i10, 2f10.3, i10, 4x, 2a8)')           &
          (( dictionarySt(1,j),                     &
             dictionarySt(2:3,j)*0.001,             &
