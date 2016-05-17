@@ -39,6 +39,7 @@ ifeq (opt,$(mode))
     # COMFLG1 = -O2 -fast -parallel -fpp $(PRAGMA)
     # COMFLG1 = -O2 -fast -parallel -fpp $(PRAGMA) -profile-functions -profile-loops
 else
+    mode    = dbg
     COMFLG1 = -g -O0 -traceback -fpp $(PRAGMA)
     # COMFLG1 = -g -O0 -fbacktrace -cpp $(PRAGMA)    
 endif
@@ -50,42 +51,45 @@ INCL = -I$(NETCDF_DIR)/include -I$(MYLIB) -I.
 
 PROGRAM = remdb2data
 
-remdb2data_$(CPU):  module_main.f90                          \
+remdb2data:  module_main.f90                          \
                     module_bufr.o module_netCDF.o
-		echo ' making remdb_$(CPU).exe'
+		@echo ' making remdb_$(CPU).exe'
 		$(FC) $(COMFLG1) -c module_main.f90
-		echo ' compile mod_main'
+		@echo ' compile mod_main'
 		$(FC) $(COMFLG1) $(INCL) -c module_bufr.f90
-		echo ' compile mod_bufr'
-		$(FC) $(COMFLG1) $(INCL) -o  remDB_$(CPU)  remDB.f90 \
-		$(MYLIB)/convertCoord.f90 $(MYLIB)/handle_error.f90 \
-		$(MYLIB)/stats_array.f90 \
+		@echo ' compile mod_bufr'
+		$(FC) $(COMFLG1) $(INCL) -o  remdb2data_$(mode)  remDB.f90 \
+		convertCoord.f90 handle_error.f90 \
+		stats_array.f90 \
 		module_main.o module_netCDF.o module_bufr.o \
 		$(LIB1) $(LIB2) $(LIB3) $(LIB4)
-		echo ' linking remdb_$(CPU).exe'
+		@echo ' linking remdb_$(CPU).exe'
 module_bufr.o:    module_bufr.f90
 		$(FC) $(COMFLG1) $(INCL) -c module_bufr.f90
-		echo ' compile mod_bufr'
+		@echo ' compile mod_bufr'
 module_netCDF.o:  module_netCDF.f90
-		echo 'proc=' $(CPU)
+		@echo 'proc=' $(CPU)
 		$(FC) $(INCL) $(COMFLG1) -c module_netCDF.f90
-		echo ' compile mod_netcdf'
+		@echo ' compile mod_netcdf'
 TEST:
 		cd $(rootDir)/test
 		$(rootDir)/remDB_$(CPU)* >log
 AMS:    module_main.f90 module_bufr.o  module_netCDF.o
 		$(FC) $(COMFLG1) -c module_main.f90
-		echo ' compile mod_main'
+		@echo ' compile mod_main'
 		$(FC) $(COMFLG1) $(INCL) -o  ams  ReadTAMS.f90 \
 		module_main.o module_netCDF.o module_bufr.o \
 		$(LIB1) $(LIB2) $(LIB3) $(LIB4)
-		echo ' linking ReadTAMS.exe'
+		@echo ' linking ReadTAMS.exe'
 
 # ---------------- Cleaning: ------------------------------
-.PHONY: clean
+.PHONY: clean clean_all
 clean :
 		@echo cleaning
-		-rm  *.o *.mod remDB_* test/cdfin_*
+		-rm  *.o *.mod remdb2data_*
+clean_all :
+		@echo cleaning
+		-rm  *.o *.mod remdb2data_* cdfin_* test/cdfin_*
 #-=--------------------------------------------------------
 
 

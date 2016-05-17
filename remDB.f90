@@ -59,7 +59,8 @@ PROGRAM ReadBASE
   CHARACTER*20  &
     typefile,   &  ! { text maket csv list_station netCDF4COSMO bufr4versus stGrads binary binary4GRADS }
     filterArea, filterObs
-  CHARACTER*10   char10, typeINPUT
+  CHARACTER(LEN=10) ::   char10, typeINPUT
+  CHARACTER(LEN=8)  ::   char8
   CHARACTER(LEN=40000) ListName
   CHARACTER*30  ::  FileName = 'fields.dat', fmOU= '(g)', oFileName='fields.dat'
   CHARACTER*256 ::  oDirName = './', inFile
@@ -122,7 +123,7 @@ PROGRAM ReadBASE
   CALL GETARG(1,typeINPUT)
   CALL GETARG(2,inFile)
 
-  IF (TRIM(typeINPUT)=='tty') THEN
+  IF( TRIM(typeINPUT)=='tty' )THEN
     iunit=5
     WRITE(*,*) ' input variable from namelist &BASE'
     READ(iunit,base)
@@ -132,7 +133,7 @@ PROGRAM ReadBASE
     READ(iunit,field) 
     WRITE(*,*) ' input variable from namelist &OUTPUT'
     READ(iunit,output) 
-  ELSEIF(TRIM(typeINPUT)=='-f') THEN
+  ELSEIF( TRIM(typeINPUT)=='-f' )THEN
     iunit=1001
     OPEN (iunit, file=TRIM(inFile), status='old')
     READ(iunit,base)
@@ -140,6 +141,9 @@ PROGRAM ReadBASE
     READ(iunit,field) 
     READ(iunit,output) 
     CLOSE(iunit)
+  ELSEIF( TRIM(typeINPUT)=='-h' )THEN
+    CALL manual()
+    STOP
   ELSE
     iunit=1001
     OPEN (iunit, file="remDB.nl", status='old')
@@ -246,13 +250,13 @@ PROGRAM ReadBASE
 !              -------------------------------------------
 
 !    ----------ListRecord---------------
-  IF ( infoListFields ) THEN
+  IF( infoListFields )THEN
     CALL GnameRemDB(nameBASE, codeBASE, Nrecord, ListName, codeRETURN)    ! list variable in field
     WRITE (*,*) 'number field', Nrecord
     WRITE (*,'(9(a8,3x))') (ListName(i:i+8), i=1,Nrecord*8, 8)
   ENDIF
 
-  LoopRecord:  do el=1, NEL        ! record cycle
+  LoopRecord:  DO el=1, NEL        ! record cycle
 
     df(el,:)%RECNAME = RECNAME(el)
     df(el,:)%RECNAME = RECNAME(el)
@@ -266,11 +270,14 @@ PROGRAM ReadBASE
     IF (infoGrid) CALL array_def(DefGrid )
 
     !    ----------infoRecord---------------
-    !if (infoRecord .AND. .NOT. statBASE )THEN 
-    IF( .NOT. statBASE )  CALL GetcRemDB(nameBASE, codeBASE, RECNAME(el), DefRec, codeRETURN)
-    !ELSEIF (infoRecord .and. .NOT. statBASE )THEN
+    !IF (infoRecord .AND. .NOT. statBASE )THEN 
+    !ELSEIF (infoRecord .AND. .NOT. statBASE )THEN
     !IF (LP > 5 )  WRITE (6,*) 'attempt read info from statBASE base'
-    IF ( statBASE )  CALL GetqRemDB(nameBASE, codeBASE, RECNAME(el), DefRec, codeRETURN)
+    IF ( statBASE )THEN
+      CALL GetqRemDB(nameBASE, codeBASE, RECNAME(el), DefRec, codeRETURN)
+    ELSE
+      CALL GetcRemDB(nameBASE, codeBASE, RECNAME(el), DefRec, codeRETURN)
+    ENDIF
     IF (LP > 5 )  WRITE (6,*) 'codeRETURN from infoRecord = ', codeRETURN, RECNAME(el)
     IF (infoRecord)  CALL array_def(DefRec(1:60) )
     !WRITE (6,'(60i8)') DefRec(1:60)
@@ -286,17 +293,22 @@ PROGRAM ReadBASE
 
 ! ----------------Reading dictionary of station-------------------
 
-  SELECT CASE (RECNAME(1))
-  CASE( 'SYNOPMAK','SYNOPDOP','TEMPMAKT','TEBDTMAK','TEBDWMAK','TEMPALLC' )
+  SELECT CASE( RECNAME(1) )
+  CASE( 'SYNOPMAK','SYNOPDOP','TEMPMAKT','TEBDTMAK','TEBDWMAK','TEMPALLC','SLOVPUR3','SLOVPUR2' )
+    IF( RECNAME(1)(1:7) == 'SLOVPUR' )THEN
+      char8 = RECNAME(1)
+    ELSE
+      char8 = 'SLOVPUR3'
+    ENDIF
     IF( HOST=='local' ) THEN
-      CALL RDSLOV('SHOT',260601_8,'SLOVPUR3',dictionarySt,dictionaryStName,nST,codeRETURN)
+      CALL RDSLOV('SHOT',260601_8,char8,dictionarySt,dictionaryStName,nST,codeRETURN)
       IF ( LP >2 ) WRITE(*,*) ' codeRETURN from RDSLOV =',codeRETURN, nST
     ELSE
       IF( nameBASE /= 'SHOT' ) CALL OPENRemDB(codeOPEN, 'SHOT', 1_4, codeRETURN)
-      CALL RDFQremdb('SHOT',260601_4,'SLOVPUR3',dictionaryStation,codeRETURN)
+      CALL RDFQremdb('SHOT',260601_4,char8,dictionaryStation,codeRETURN)
       IF (LP >3 ) WRITE(*,*) ' codeRETURN from RDFQ =',codeRETURN
       nST = COUNT(dictionaryStation(1,:)>0)
-      IF (LP >3 ) WRITE(*,*) 'number stations in dictionary SLOVPUR3',nST
+      IF (LP >3 ) WRITE(*,*) nST,' stations in dictionary ',char8
       dictionarySt(1:6,:) = dictionaryStation(1:6,:)
 !     dictionaryStName(1:2,:) = dictionaryStation(7:8,:)
     ENDIF
@@ -306,6 +318,7 @@ PROGRAM ReadBASE
   ENDSELECT
 
   LoopRecord2:  DO el=1,NEL        ! record cycle
+    IF( recname(el)(1:7) == 'SLOVPUR' ) CYCLE
 
     LoopTime:  DO t=1,NT       ! time cycle
 
@@ -393,7 +406,7 @@ PROGRAM ReadBASE
 
   ENDDO  LoopRecord2  ! cycle  RECORD
 
-  
+
 ! CLOSE connection with host
   IF( HOST=='local' )THEN
     CALL closb       (HOST, codeRETURN)
@@ -444,15 +457,16 @@ PROGRAM ReadBASE
 
     DO t=1,NT; DO el=1,NEL
       NY = df(el,t)%NY
-      IF( NY == 0 ) CYCLE
+      IF( NY == 0 .AND. RECNAME(el)(1:7) /= 'SLOVPUR' ) CYCLE
 
-      IF (FileName=='DATE_RECNAME')THEN
-        oFileName = df(el,t)%charDATEHH//'_'//RECNAME(el)
+      IF( FileName=='DATE_RECNAME' )THEN
+        oFileName = TRIM(df(el,t)%charDATEHH)//'_'//RECNAME(el)
       ENDIF
-      OPEN (ounit,file=TRIM(ofilename), position='append')
+      ! WRITE(*,*) '!',ofilename,'!'
+      OPEN( ounit,FILE=TRIM(ofilename), position='append' )
       !WRITE(ounit,*) 'DATE=',Date(t), hour(t), 'zab=',startTerm;
 
-      IF ( RECNAME(el)(1:5)=='SYNOP' .AND. Date(t) > 20021231 ) THEN
+      IF( RECNAME(el)(1:5)=='SYNOP' .AND. Date(t) > 20021231 )THEN
        !WRITE(ounit,'(45(a,"    "))') (trim(df(el,t)%header(i)),i=2,45)
           WRITE(ounit,2210) (TRIM(df(el,t)%header(i)),i=2,46)
           WRITE(ounit,2211)               ( &
@@ -534,7 +548,7 @@ PROGRAM ReadBASE
       ELSEIF( RECNAME(el)=='TEBDWMAK' ) THEN
         WRITE(ounit,'("  index sign    height  lat      lon      n         NT     jk    reserv    ")')
         WRITE(ounit,'(i7, i3, 7f8.0,/,"Pres  ",97f7.0,/,"Wdir  ",97f5.0,/,"Wspeed",97f5.0)')  &
-         ( ( int(var(el,t)%p2(1,j)*1000+var(el,t)%p2(2,j)), int(var(el,t)%p2(3,j)),  var(el,t)%p2(4:10,j), &
+         ( ( INT(var(el,t)%p2(1,j)*1000+var(el,t)%p2(2,j)), int(var(el,t)%p2(3,j)),  var(el,t)%p2(4:10,j), &
             (var(el,t)%p2(i,j),i=11,301,3),                   &
             (var(el,t)%p2(i,j),i=12,301,3),                   &
             (var(el,t)%p2(i,j),i=13,301,3)),  j=1,NY )
@@ -583,8 +597,17 @@ PROGRAM ReadBASE
       2310 FORMAT(( a5, a8,a9, 32(x,a6) ))
       2311 FORMAT(( i2,i3.3, xf7.3,xf8.3, 8(xf6.1), 3(xi6), xf6.1, xi3, xi2, 12(xi6), 2(xf6.1), 5(xi6) ))
 
-      ELSEIF( RECNAME(el)(1:7)=='SLOVPUR' )
-        WRITE(*,*) 'Need commands for SLOVPUR:', RECNAME(el)
+      ELSEIF( RECNAME(el)(1:7)=='SLOVPUR' )THEN
+        WRITE(*,*) 'print dictionary from ', RECNAME(el)
+
+        ! OPEN (ounit,FILE='SLOVPUR3.txt', status='unknown')
+        OPEN (ounit,FILE=RECNAME(el), status='unknown')
+        WRITE(ounit,'(i10, 2f10.3, i10, 4x, 2a8)')           &
+             (( dictionarySt(1,j),                     &
+                dictionarySt(2:3,j)*0.001,             &
+                dictionarySt(4,j),                     &
+                dictionaryStName(1:2,j)  ),j=1,nSt )
+        CLOSE(ounit)
 
       ELSE
         WRITE(*,*) 'No maket for this RECNAME:', RECNAME(el)
@@ -682,7 +705,7 @@ PROGRAM ReadBASE
  3101 FORMAT(f10.2, ';', i8, ';', f10.2, ';', f10.2, ';', i6, ';', i6, ';', i3, ';', 6(i3, ';') )
  7001 FORMAT(a16, ';', i4, i3.3, ';', 2(f8.2,';'), f8.2, ';', i4, ';')
  6401 FORMAT(a16:, ';', i4, i3.3, ';', 2(f8.2,';'), i6, ';', i3, ';', i6, ';', 2(f8.2,';'), 37(f8.2,';'))
-   
+
   CASE( 'stGrads' )
 
     DO t=1,NT; DO el=1,NEL
@@ -709,7 +732,7 @@ PROGRAM ReadBASE
     loopT: DO t=1,NT; loopEL: DO el=1,NEL
         WRITE(*,*) '== el =',nel,'t =',nt
 
-        IF( df(el,t)%RECNAME=='SYNOPMAK' .or. df(el,t)%RECNAME=='SYNOPDOP' )THEN
+        IF( df(el,t)%RECNAME=='SYNOPMAK' .OR. df(el,t)%RECNAME=='SYNOPDOP' )THEN
           CALL init_CDF_array( 1, df(el,t)%NY, 'synop'  )
 !         CALL init_CDF_array( 1+amountPt,  df(el,t)%NY + amountPt, 'synop'  )
 !         amountPt=amountPt+df(el,t)%NY
@@ -741,7 +764,7 @@ PROGRAM ReadBASE
 #endif
 
   CASE( 'binary4GRADS' )
-    IF (LP > 1 ) WRITE (*,*) 'WRITE FILE in ',trim(typefile)
+    IF (LP > 1 ) WRITE (*,*) 'WRITE FILE in ',TRIM(typefile)
 
     ncount=1
     NX=df(1,1)%NX
@@ -758,7 +781,7 @@ PROGRAM ReadBASE
       oNYend=NY
     ENDIF
 
-    OPEN (ounit,file=trim(filename), FORM='UNFORMATTED', ACCESS='DIRECT', RECL=NX*NY)
+    OPEN (ounit,FILE=TRIM(filename), FORM='UNFORMATTED', ACCESS='DIRECT', RECL=NX*NY)
 
     nzab=NEL/NEL0
 
@@ -776,7 +799,8 @@ PROGRAM ReadBASE
     CLOSE(ounit)
 
   CASE( 'list_station')
-  
+
+    ! 1. file with coordinate station from recname
     DO t=1,NT; DO el=1,NEL
         NY=df(el,t)%NY
 
@@ -797,6 +821,7 @@ PROGRAM ReadBASE
 
     ENDDO; ENDDO  ! cycle  RECORD ; cycle  time
 
+    ! 2. file with coordinate station from SLOVPURx
     OPEN (ounit,FILE='SLOVPUR3.txt', status='unknown')
     WRITE(ounit,'(i10, 2f10.3, i10, 4x, 2a8)')           &
          (( dictionarySt(1,j),                     &
@@ -807,7 +832,7 @@ PROGRAM ReadBASE
 
 #ifdef BUFR
   CASE( 'bufr4versus')
-    IF(LP > 2) WRITE(*,"('write file in format',a12)") trim(typefile)
+    IF(LP > 2) WRITE(*,"('write file in format',a12)") TRIM(typefile)
 
     DO t=1,NT
       DO el=1,NEL
@@ -815,19 +840,19 @@ PROGRAM ReadBASE
 
         IF(LP > 2)WRITE(*,"('writing record ',a,i4,' in file ',a)") df(el,t)%RECNAME, t, oFileName
 
-        CALL encode_bufr(trim(oFileName))
+        CALL encode_bufr(TRIM(oFileName))
 
       ENDDO
     ENDDO
 #endif
 
   CASE( 'kml','KML')
-    IF(LP > 2) WRITE(*,"('write file in format',a12)") trim(typefile)
+    IF(LP > 2) WRITE(*,"('write file in format',a12)") TRIM(typefile)
 
     DO t=1,NT
       DO el=1,NEL
         oFileName=df(el,t)%RECNAME//df(el,t)%charDATEHH//".kml"
-        OPEN (ounit,file=trim(oFileName), position='append')
+        OPEN (ounit,FILE=TRIM(oFileName), position='append')
 
         IF(LP > 2)WRITE(*,"('writing record ',a,i4,' in file ',a)") df(el,t)%RECNAME, t, oFileName
 
@@ -863,6 +888,28 @@ INCLUDE "init_BUFR.f90"
 
 !SUBROUTINE read_arguments()
 !ENDSUBROUTINE read_arguments
+
+SUBROUTINE manual()
+
+  WRITE(*, 555)
+
+  555 FORMAT( / &
+        '[1m','remdb2data','[0m', 4x,'- get data from remote DataBase'//, &
+        '[31m', 'SYNOPSIS', '[0m', // &
+        T8,'remdb [-h] [-f file.nl] ',// &
+        '[1m','DESCRIPTION','[0m' /, &
+        T4,'This program get data from remote DataBase of HMC and ',/ &
+        T4,'write data to need format',/ &
+        T4,'For run you ned set variable in file remDB.nl',/ &
+        T6,'Variables of remDB.nl',/ &
+        T8,'Namelist &BASE' ,/ &
+        T10,'HOST, nameBASE, codeBASE, codeOPEN, statBASE, LevelPrint',/ &
+        T10,'HOST = { "192.168.97.71" | "xeon-4a" | ... } ! a15 ',/ &
+        T10,'nameBASE = { "SHOT" | "AM.." | ... } ! a4',/  &
+        T10,'codeBASE ! i6',/ &
+)
+
+ENDSUBROUTINE manual
 
 ENDPROGRAM ReadBASE
 !==================================================================================================================

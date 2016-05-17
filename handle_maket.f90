@@ -132,7 +132,7 @@ SUBROUTINE handle()
 
       IF( Date(t) > 20021231 )THEN
         df(el,:)%header(28) = 'tMinG'
-        df(el,:)%header(34) = 'shiftR'
+        df(el,:)%header(34) = 'timeR'
         df(el,:)%header(35) = 'E4'
         df(el,:)%header(36) = 'E1'
         df(el,:)%header(37) = 'E3'
@@ -145,6 +145,14 @@ SUBROUTINE handle()
         df(el,:)%header(44) = 't2m-hc'
         df(el,:)%header(45) = 't2m-MO'
         df(el,:)%header(46) = 'tmsl'
+
+        IF( Date(t) >= 20100209 )THEN
+          df(el,:)%header(35) = 'E4Ix'
+          df(el,:)%header(36) = 'E1E3'
+          df(el,:)%header(37) = 'R(3h)'
+          df(el,:)%header(45) = 'iR' ! real change from 20140620 00
+        END IF
+
      ELSE
         df(el,:)%header(28) = 'tAveDay'
         df(el,:)%header(34) = 'stm&hail'
