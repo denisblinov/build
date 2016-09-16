@@ -59,8 +59,8 @@ remdb2data:  module_main.f90                          \
 		$(FC) $(COMFLG1) $(INCL) -c module_bufr.f90
 		@echo ' compile mod_bufr'
 		$(FC) $(COMFLG1) $(INCL) -o  remdb2data_$(mode)  remDB.f90 \
-		convertCoord.f90 handle_error.f90 \
-		stats_array.f90 \
+		$(MYLIB)/convertCoord.f90 $(MYLIB)/handle_error.f90 \
+		$(MYLIB)/stats_array.f90 \
 		module_main.o module_netCDF.o module_bufr.o \
 		$(LIB1) $(LIB2) $(LIB3) $(LIB4)
 		@echo ' linking remdb_$(CPU).exe'

@@ -132,7 +132,8 @@ PROGRAM ReadBASE
     WRITE(*,*) ' input variable from namelist &FIELD'
     READ(iunit,field) 
     WRITE(*,*) ' input variable from namelist &OUTPUT'
-    READ(iunit,output) 
+    READ(iunit,output)
+
   ELSEIF( TRIM(typeINPUT)=='-f' )THEN
     iunit=1001
     OPEN (iunit, file=TRIM(inFile), status='old')
@@ -141,9 +142,11 @@ PROGRAM ReadBASE
     READ(iunit,field) 
     READ(iunit,output) 
     CLOSE(iunit)
-  ELSEIF( TRIM(typeINPUT)=='-h' )THEN
-    CALL manual()
+
+  ELSEIF( TRIM(typeINPUT)=='-h' .OR. TRIM(typeINPUT)=='--help' )THEN
+    CALL manual(inFile)
     STOP
+
   ELSE
     iunit=1001
     OPEN (iunit, file="remDB.nl", status='old')
@@ -152,6 +155,7 @@ PROGRAM ReadBASE
     READ(iunit,field) 
     READ(iunit,output) 
     CLOSE(iunit)
+
   ENDIF
   
 !----------------------------------------
@@ -889,8 +893,11 @@ INCLUDE "init_BUFR.f90"
 !SUBROUTINE read_arguments()
 !ENDSUBROUTINE read_arguments
 
-SUBROUTINE manual()
+SUBROUTINE manual(chapter)
+  CHARACTER(LEN=*) typeINPUT
 
+  IF( TRIM(chapter)== 'OUTPUT' ) WRITE(*,*) 'OUTPUT chapter'
+  
   WRITE(*, 555)
 
   555 FORMAT( / &
@@ -903,10 +910,38 @@ SUBROUTINE manual()
         T4,'For run you ned set variable in file remDB.nl',/ &
         T6,'Variables of remDB.nl',/ &
         T8,'Namelist &BASE' ,/ &
-        T10,'HOST, nameBASE, codeBASE, codeOPEN, statBASE, LevelPrint',/ &
-        T10,'HOST = { "192.168.97.71" | "xeon-4a" | ... } ! a15 ',/ &
-        T10,'nameBASE = { "SHOT" | "AM.." | ... } ! a4',/  &
-        T10,'codeBASE ! i6',/ &
+        T12,'HOST, nameBASE, codeBASE, codeOPEN, statBASE, LevelPrint',/ &
+        T12,'HOST = { "192.168.97.71" | "xeon-4a" | ... } ! a15 ',/ &
+        T12,'nameBASE = { "SHOT" | "AM.." | ... } ! a4',/  &
+        T12,'LevelPrint = 2 ! i',/  &
+        T12, '/' ,/ &
+        T8, 'Namelist &REQUEST' ,/ &
+        T12, 'infoGrid' ,/ &
+        T12, 'infoListFields' ,/ &
+        T12, 'infoRecord' ,/ &
+        T12, 'readFIELD' ,/ &
+        T12, 'readFIELD2' ,/ &
+        T12, 'rMaket' ,/ &
+        T12, '/' ,/ &
+        T8, 'Namelist &FIELD' ,/ &
+        T12,  'listfields ! a8(:)',/ &
+        T12,  'DATEHH   ! i10',/ &
+        T12,  'date_end ! i10',/ &
+        T12,  'HFstep ! i6',/ &
+        T12,  'startTerm ! i6',/ &
+        T12,  'endTerm ! i6',/ &
+        T12,  '/' ,/ &
+        T8, 'Namelist &OUTPUT' ,/ &
+        T12, 'typefile = ' ,/ &
+        T12, 'FileName = ' ,/ &
+        T12, 'oDirName = ' ,/ &
+        T12, 'fmOU = ' ,/ &
+        T12, 'appendfile = ' ,/ &
+        T12, 'appendfile = ' ,/ &
+        T12, 'listPoints = ' ,/ &
+        T12, 'filterArea = ' ,/ &
+        T12, 'filterCoord = ' ,/ &
+        T12, '/' ,/ &
 )
 
 ENDSUBROUTINE manual

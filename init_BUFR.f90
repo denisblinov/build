@@ -178,23 +178,23 @@ IMPLICIT  INTEGER(I,K,N) !, REAL(R,V)
 
     DO I=1,df(el,t)%NY ! cycle on stations
 
-      values( 1)=var(el,t)%p2(1,i)     ! WMO BLOCK NUMBER
-      values( 2)=var(el,t)%p2(2,i)     ! WMO STATION NUMBER
-      values( 7)=var(el,t)%p2(3,i)     ! LATITUDE (HIGH ACCURACY)
-      values( 8)=var(el,t)%p2(4,i)     ! LONGITUDE (HIGH ACCURACY)
-      values( 9)=var(el,t)%p2(5,i)     ! HEIGHT OF STATION GROUND ABOVE MEAN SEA LEVEL (SEE NOTE 3)
-      values(10)=var(el,t)%p2(9,i)     ! PRESSURE REDUCED TO MEAN SEA LEVEL
-      values(11)=var(el,t)%p2(10,i)    ! TEMPERATURE AT 2M
-      values(12)=var(el,t)%p2(11,i)    ! DEW POINT TEMPERATURE AT 2M
-      IF ( KSEC1(12) ==6 .or. KSEC1(12) ==18 ) THEN
-        values(13)=var(el,t)%p2(30,i)  ! TOTAL PRECIPITATION PAST 12 HOURS
-      ENDIF
-      values(14)=rvind                 ! TOTAL PRECIPITATION
-      values(15)=var(el,t)%p2(18,i)    ! CLOUD COVER (TOTAL)
-      values(16)=var(el,t)%p2(12,i)    ! WIND DIRECTION AT 10 M
-      values(17)=var(el,t)%p2(13,i)    ! WIND SPEED AT 10 M
-      values(18)=var(el,t)%p2(30,i)    ! TOTAL PRECIPITATION PAST 12 HOURS( mask as HEIGHT WAVES )
-      values(19)=var(el,t)%p2(31,i)    ! TOTAL PRECIPITATION PAST 24 HOURS
+      values( 1) = var(el,t)%p2(1,i)     ! WMO BLOCK NUMBER
+      values( 2) = var(el,t)%p2(2,i)     ! WMO STATION NUMBER
+      values( 7) = var(el,t)%p2(3,i)     ! LATITUDE (HIGH ACCURACY)
+      values( 8) = var(el,t)%p2(4,i)     ! LONGITUDE (HIGH ACCURACY)
+      values( 9) = var(el,t)%p2(5,i)     ! HEIGHT OF STATION GROUND ABOVE MEAN SEA LEVEL (SEE NOTE 3)
+      values(10) = var(el,t)%p2(9,i)     ! PRESSURE REDUCED TO MEAN SEA LEVEL
+      values(11) = var(el,t)%p2(10,i)    ! TEMPERATURE AT 2M
+      values(12) = var(el,t)%p2(11,i)    ! DEW POINT TEMPERATURE AT 2M
+      ! IF ( KSEC1(12) ==6 .OR. KSEC1(12) ==18 ) THEN
+      values(13) = var(el,t)%p2(30,i)  ! TOTAL PRECIPITATION PAST 12 HOURS
+      ! ENDIF
+      values(14) = var(el,t)%p2(29,i)    ! TOTAL PRECIPITATION PAST  6 HOURS
+      values(15) = var(el,t)%p2(18,i)    ! CLOUD COVER (TOTAL)
+      values(16) = var(el,t)%p2(12,i)    ! WIND DIRECTION AT 10 M
+      values(17) = var(el,t)%p2(13,i)    ! WIND SPEED AT 10 M
+      values(18) = rvind                 ! 
+      values(19) = var(el,t)%p2(31,i)    ! TOTAL PRECIPITATION PAST 24 HOURS
 
       KBUFL=3000
       KPMISS=1
