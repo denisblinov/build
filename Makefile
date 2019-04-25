@@ -1,4 +1,4 @@
-
+# new description
 rootDir=$(PWD)
 
 # for SGI ALTIX 4700
